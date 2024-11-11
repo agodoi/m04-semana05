@@ -12,6 +12,7 @@
 
 ## Arquitetura MQTT
 
+![Arquitetura Ubidots](https://github.com/agodoi/m04-semana05/blob/main/imgs/arquiteturaUbidots.jpg)
 
 ## Funcionamento do MQTT
 
