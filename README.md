@@ -16,6 +16,7 @@
 
 ## Funcionamento do MQTT
 
+![Fluxograma MQTT](https://github.com/agodoi/m04-semana05/blob/main/imgs/fluxogramaMqtt.png)
 
 ## Código exemplo
 
