@@ -10,7 +10,8 @@
 
 * Modelo TCP/IP: rede, Internet, transporte, aplicação. Controle de um LED por meio da Internet.
 
-## Protocolo MQTT
+## Arquitetura MQTT
+
 
 ## Funcionamento do MQTT
 
