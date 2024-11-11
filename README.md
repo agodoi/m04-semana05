@@ -10,11 +10,11 @@
 
 * Modelo TCP/IP: rede, Internet, transporte, aplicação. Controle de um LED por meio da Internet.
 
-## Arquitetura MQTT
+## Arquitetura Ubidots
 
 ![Arquitetura Ubidots](https://github.com/agodoi/m04-semana05/blob/main/imgs/arquiteturaUbidots.jpg)
 
-## Funcionamento do MQTT
+## Funcionamento do Ubidots
 
 ![Fluxograma MQTT](https://github.com/agodoi/m04-semana05/blob/main/imgs/fluxogramaMqtt.png)
 
