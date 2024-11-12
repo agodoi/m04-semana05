@@ -94,18 +94,16 @@ void loop()
 ## Acendendo um LED do Ubidots
 
 ```
+#include <WiFi.h>
 #include "UbidotsEsp32Mqtt.h"
 
-const char *UBIDOTS_TOKEN = "BBFF-...";
+const uint8_t pinLED = 22;
+const char *UBIDOTS_TOKEN = "BBFF-";
 const char *WIFI_SSID = "";      // Put here your Wi-Fi SSID
 const char *WIFI_PASS = "";      // Put here your Wi-Fi password
-const char *DEVICE_LABEL = "";   // Replace with the device label to subscribe to
-const char *VARIABLE_LABEL = ""; // Replace with your variable label to subscribe to
+const char *DEVICE_LABEL = "testador";   // Replace with the device label to subscribe to
+const char *VARIABLE_LABEL1 = "botao"; // Replace with your variable label to subscribe to
 
-
-const uint8_t LED = 2; // Pin used to write data based on 1's and 0's coming from Ubidots
-const int PUBLISH_FREQUENCY = 1000; // Update rate in milliseconds
-unsigned long timer;
 Ubidots ubidots(UBIDOTS_TOKEN);
 
 void callback(char *topic, byte *payload, unsigned int length)
@@ -116,44 +114,42 @@ void callback(char *topic, byte *payload, unsigned int length)
   for (int i = 0; i < length; i++)
   {
     Serial.print((char)payload[i]);
-    if ((char)payload[0] == '1')
-    {
-      digitalWrite(LED, HIGH);
-    }
-    else
-    {
-      digitalWrite(LED, LOW);
-    }
   }
-  Serial.println();
+  
+  String message;
+  for (int i = 0; i < length; i++) {
+    message += (char)payload[i];
+  }
+  int state = message.toInt();
+  if (state == 1) {
+    Serial.println("\nLED ligado");
+  } else {
+    Serial.println("\nLED desligado");
+  }
+  Serial.println("");
+ 
 }
+
 
 void setup()
 {
+  // put your setup code here, to run once:
   Serial.begin(115200);
-  pinMode(LED, OUTPUT);
-
   ubidots.setDebug(true);  // uncomment this to make debug messages available
   ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
   ubidots.setCallback(callback);
   ubidots.setup();
   ubidots.reconnect();
-  ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL); 
+  ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL1); // Insert the dataSource and Variable's Labels
 }
-
 
 void loop()
 {
-
-  if(millis() - timer > PUBLISH_FREQUENCY){
-    ubidots.add(VARIABLE_LABEL, 0); // Insira variável e dispositivo a serem publicados
-    ubidots.publish(DEVICE_LABEL);
-    timer = millis();
-  }
+  // put your main code here, to run repeatedly:
   if (!ubidots.connected())
   {
     ubidots.reconnect();
-    ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL); 
+    ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL1); // Insert the dataSource and Variable's Labels
   }
   ubidots.loop();
 }
