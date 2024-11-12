@@ -21,75 +21,97 @@
 ## Exemplos
 
 
-### Clássico Código Envia/RecebeDados ao Broker [Ubidots ou outro qualquer]
+### Clássico Código Envia Dados ao Broker [Ubidots]
 
 Se não quiser usar o Ubidots, basta substituir algumas linhas pelo HiveMQ.
 
 ```
-#include "UbidotsEsp32Mqtt.h" // Inclui a biblioteca necessária para comunicação com o Ubidots via MQTT usando o ESP32
+#include "UbidotsEsp32Mqtt.h"
 
-const char *UBIDOTS_TOKEN = "";  // Define o token de autenticação do Ubidots. Você pega isso em API Credentials da sua conta de grupo do Inteli.
-const char *WIFI_SSID = "";      // Define o SSID (nome) da rede Wi-Fi que será usada. Sugestão: use o WiFi do seu celular para evitar o proxy.
-const char *WIFI_PASS = "";      // Define a senha da rede Wi-Fi
-const char *DEVICE_LABEL = "";   // Define o rótulo do dispositivo no Ubidots ao qual os dados serão publicados
-const char *VARIABLE_LABEL1 = ""; // Define o rótulo da variável 1 no Ubidots que receberá os dados
-const char *VARIABLE_LABEL2 = ""; // Define o rótulo da variável 2 no Ubidots que receberá os dados
-//const char *VARIABLE_LABELX = ""; // Define o rótulo da variável X no Ubidots que receberá os dados
-//No plano assinado pelo Inteli, o Ubidots suporta até 20 variáveis a cada segundo
+/****************************************
+ * Define Constants
+ ****************************************/
+const char *UBIDOTS_TOKEN = ""; //pegue o token no menu vertical esquerdo de quando vc criou o "black device"
+const char *WIFI_SSID = "";      // Put here your Wi-Fi SSID
+const char *WIFI_PASS = "";      // Put here your Wi-Fi password
+const char *DEVICE_LABEL = "testeGodoi";   // pegue o nome do device que você criou do "blank device"
+const char *VARIABLE_LABEL1 = "potenciometro"; // Put here your Variable label to which data  will be published
+const char *VARIABLE_LABEL2 = "botao"; // Put here your Variable label to which data  will be published
 
-const int PUBLISH_FREQUENCY = 5000; // Define a frequência de publicação dos dados em milissegundos (neste caso, a cada 5 segundos)
+const int PUBLISH_FREQUENCY = 6000; // Update rate in milliseconds
 
-unsigned long timer; // Variável para armazenar o tempo atual
-uint8_t analogPin = 34; // Define o pino analógico que será usado para leitura de dados (GPIO34)
+unsigned long timer;
+uint8_t pinPotenciometro = 34;
+uint8_t pinBotao = 33;
+uint8_t pinLED = 2;
+bool statusLED = false;
 
-Ubidots ubidots(UBIDOTS_TOKEN); // Instancia o objeto Ubidots com o token de autenticação fornecido
+Ubidots ubidots(UBIDOTS_TOKEN);
 
-// Função de callback para lidar com mensagens recebidas do Ubidots via MQTT
+/****************************************
+ * Auxiliar Functions
+ ****************************************/
+
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  Serial.print("Mensagem recebida ["); // Exibe uma mensagem de início no monitor serial
-  Serial.print(topic); // Exibe o tópico recebido
+  Serial.print("Message arrived [");
+  Serial.print(topic);
   Serial.print("] ");
-  for (int i = 0; i < length; i++) // Itera sobre o payload recebido
+  for (int i = 0; i < length; i++)
   {
-    Serial.print((char)payload[i]); // Converte cada byte para caractere e exibe no monitor serial
+    Serial.print((char)payload[i]);
   }
-  Serial.println(); // Quebra de linha no monitor serial
-  //aqui você inseri seu código para fazer o que deseja com o dado recebido do Ubidots
+  Serial.println();
 }
+
+/****************************************
+ * Main Functions
+ ****************************************/
 
 void setup()
 {
-  Serial.begin(115200); // Inicializa a comunicação serial com uma taxa de 115200 bauds
-  // ubidots.setDebug(true);  // Descomente esta linha para exibir mensagens de depuração (debug)
-  ubidots.connectToWifi(WIFI_SSID, WIFI_PASS); // Conecta o ESP32 à rede Wi-Fi usando o SSID e a senha fornecidos
-  ubidots.setCallback(callback); // Define a função de callback para lidar com mensagens recebidas
-  ubidots.setup(); // Configura a conexão MQTT com o Ubidots
-  ubidots.reconnect(); // Reconecta ao servidor MQTT do Ubidots, caso necessário
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  ubidots.setDebug(true);  // uncomment this to make debug messages available
+  ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
+  ubidots.setCallback(callback);
+  ubidots.setup();
+  ubidots.reconnect();
+  pinMode(pinBotao, INPUT_PULLUP);
+  pinMode(pinPotenciometro, INPUT);
+  pinMode(pinLED, OUTPUT);
 
-  timer = millis(); // Armazena o tempo atual em milissegundos
+  timer = millis();
 }
 
 void loop()
 {
-  if (!ubidots.connected()) // Verifica se o ESP32 está conectado ao Ubidots
+  // put your main code here, to run repeatedly:
+  if (!ubidots.connected())
   {
-    ubidots.reconnect(); // Se não estiver conectado, tenta reconectar
+    ubidots.reconnect();
   }
-  if (abs(millis() - timer) > PUBLISH_FREQUENCY) // Verifica se o intervalo de tempo definido para publicação foi alcançado
+  if (millis() - timer > PUBLISH_FREQUENCY) // triggers the routine every X seconds
   {
-    float value1 = analogRead(analogPin); // Lê o valor do pino analógico definido (GPIO34)
-    ubidots.add(VARIABLE_LABEL1, value1); // Adiciona o valor lido à variável que será enviada ao Ubidots
-    ubidots.publish(DEVICE_LABEL); // Publica os dados para o dispositivo especificado no Ubidots
-    ubidots.add(VARIABLE_LABEL2, value2); // Adiciona o segundo que será enviada ao Ubidots
-    ubidots.publish(DEVICE_LABEL); // repete a linha que publica os dados para o dispositivo especificado no Ubidots
-    timer = millis(); // Atualiza o temporizador para o tempo atual
+    float value1 = analogRead(pinPotenciometro);
+    bool value2 = digitalRead(pinBotao);
+    Serial.println(value1);
+    Serial.println(value2);
+    
+    ubidots.add(VARIABLE_LABEL1, value1); // Insert your variable Labels and the value to be sent
+    ubidots.publish(DEVICE_LABEL);
+    ubidots.add(VARIABLE_LABEL2, value2); // Insert your variable Labels and the value to be sent
+    ubidots.publish(DEVICE_LABEL);
+    timer = millis();
+    //statusLED = !statusLED;
+    //digitalWrite(pinLED, statusLED);
+    
   }
-  ubidots.loop(); // Mantém a conexão e comunicação com o servidor Ubidots
+  ubidots.loop();
 }
 ```
 
-### Código Controle de LED
+### Clássio Código Recebe Dados do Broker [Ubidots]
 
 ## Acendendo um LED do Ubidots
 
@@ -98,10 +120,10 @@ void loop()
 #include "UbidotsEsp32Mqtt.h"
 
 const uint8_t pinLED = 22;
-const char *UBIDOTS_TOKEN = "BBFF-";
-const char *WIFI_SSID = "";      // Put here your Wi-Fi SSID
+const char *UBIDOTS_TOKEN = ""; //pegue o token no menu vertical esquerdo do seu ubidots quando criou um dispositivo novo
+const char *WIFI_SSID = "";      // lembrando que Apple não é compatível com o ESP32 que trabalha apenas no 2.4GHz
 const char *WIFI_PASS = "";      // Put here your Wi-Fi password
-const char *DEVICE_LABEL = "testador";   // Replace with the device label to subscribe to
+const char *DEVICE_LABEL = "testegodoi";   // coloque o nome do device que você criou no "blank device"
 const char *VARIABLE_LABEL1 = "botao"; // Replace with your variable label to subscribe to
 
 Ubidots ubidots(UBIDOTS_TOKEN);
