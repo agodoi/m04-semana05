@@ -28,11 +28,14 @@ Se não quiser usar o Ubidots, basta substituir algumas linhas pelo HiveMQ.
 ```
 #include "UbidotsEsp32Mqtt.h" // Inclui a biblioteca necessária para comunicação com o Ubidots via MQTT usando o ESP32
 
-const char *UBIDOTS_TOKEN = "";  // Define o token de autenticação do Ubidots
-const char *WIFI_SSID = "";      // Define o SSID (nome) da rede Wi-Fi que será usada
+const char *UBIDOTS_TOKEN = "";  // Define o token de autenticação do Ubidots. Você pega isso em API Credentials da sua conta de grupo do Inteli.
+const char *WIFI_SSID = "";      // Define o SSID (nome) da rede Wi-Fi que será usada. Sugestão: use o WiFi do seu celular para evitar o proxy.
 const char *WIFI_PASS = "";      // Define a senha da rede Wi-Fi
 const char *DEVICE_LABEL = "";   // Define o rótulo do dispositivo no Ubidots ao qual os dados serão publicados
-const char *VARIABLE_LABEL = ""; // Define o rótulo da variável no Ubidots que receberá os dados
+const char *VARIABLE_LABEL1 = ""; // Define o rótulo da variável 1 no Ubidots que receberá os dados
+const char *VARIABLE_LABEL2 = ""; // Define o rótulo da variável 2 no Ubidots que receberá os dados
+//const char *VARIABLE_LABELX = ""; // Define o rótulo da variável X no Ubidots que receberá os dados
+//No plano assinado pelo Inteli, o Ubidots suporta até 20 variáveis a cada segundo
 
 const int PUBLISH_FREQUENCY = 5000; // Define a frequência de publicação dos dados em milissegundos (neste caso, a cada 5 segundos)
 
@@ -40,10 +43,6 @@ unsigned long timer; // Variável para armazenar o tempo atual
 uint8_t analogPin = 34; // Define o pino analógico que será usado para leitura de dados (GPIO34)
 
 Ubidots ubidots(UBIDOTS_TOKEN); // Instancia o objeto Ubidots com o token de autenticação fornecido
-
-/****************************************
- * Funções Auxiliares
- ****************************************/
 
 // Função de callback para lidar com mensagens recebidas do Ubidots via MQTT
 void callback(char *topic, byte *payload, unsigned int length)
@@ -59,11 +58,6 @@ void callback(char *topic, byte *payload, unsigned int length)
   //aqui você inseri seu código para fazer o que deseja com o dado recebido do Ubidots
 }
 
-/****************************************
- * Funções Principais
- ****************************************/
-
-// Função de configuração que é executada uma vez quando o ESP32 é inicializado
 void setup()
 {
   Serial.begin(115200); // Inicializa a comunicação serial com uma taxa de 115200 bauds
@@ -76,7 +70,6 @@ void setup()
   timer = millis(); // Armazena o tempo atual em milissegundos
 }
 
-// Função principal que é executada continuamente em loop
 void loop()
 {
   if (!ubidots.connected()) // Verifica se o ESP32 está conectado ao Ubidots
@@ -85,9 +78,11 @@ void loop()
   }
   if (abs(millis() - timer) > PUBLISH_FREQUENCY) // Verifica se o intervalo de tempo definido para publicação foi alcançado
   {
-    float value = analogRead(analogPin); // Lê o valor do pino analógico definido (GPIO34)
-    ubidots.add(VARIABLE_LABEL, value); // Adiciona o valor lido à variável que será enviada ao Ubidots
+    float value1 = analogRead(analogPin); // Lê o valor do pino analógico definido (GPIO34)
+    ubidots.add(VARIABLE_LABEL1, value1); // Adiciona o valor lido à variável que será enviada ao Ubidots
     ubidots.publish(DEVICE_LABEL); // Publica os dados para o dispositivo especificado no Ubidots
+    ubidots.add(VARIABLE_LABEL2, value2); // Adiciona o segundo que será enviada ao Ubidots
+    ubidots.publish(DEVICE_LABEL); // repete a linha que publica os dados para o dispositivo especificado no Ubidots
     timer = millis(); // Atualiza o temporizador para o tempo atual
   }
   ubidots.loop(); // Mantém a conexão e comunicação com o servidor Ubidots
@@ -135,10 +130,8 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 void setup()
 {
-  // put your setup code here, to run once:
   Serial.begin(115200);
   pinMode(LED, OUTPUT);
-
 
   ubidots.setDebug(true);  // uncomment this to make debug messages available
   ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
@@ -151,8 +144,6 @@ void setup()
 
 void loop()
 {
-  // put your main code here, to run repeatedly:
-
 
   if(millis() - timer > PUBLISH_FREQUENCY){
     ubidots.add(VARIABLE_LABEL, 0); // Insira variável e dispositivo a serem publicados
