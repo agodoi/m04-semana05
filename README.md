@@ -35,6 +35,7 @@
 const char *WIFI_SSID = ""; // Put here your Wi-Fi SSID
 const char *WIFI_PASS = ""; // Put here your Wi-Fi password
 
+const char *UBIDOTS_TOKEN = "PEGAR O TOKEN QUE CHEGOU NO SLACK PARA O SEU GRUPO"; //PROCURE PELO SEU TOKEN COM O SEU PROFESSOR DE PROG.
 const char *DEVICE_LABEL = "esp32_t12_godoi"; // Coloque o nome do dispositivo que você deseja apelidar
 const char *VARIABLE_LABEL1 = "potenciometro"; // Coloque o nome da variável que deseja publicar
 const char *VARIABLE_LABEL2 = "botao"; // Outra variável que será publicada
@@ -42,9 +43,6 @@ const char *CLIENT_ID = "godoi"; //PULO DO GATO! Coloque um nome qualquer para t
 //esse cliente_id é apenas para não sobrepor os tópicos dentro da conta do Ubidots. Ele é importante aqui no código, mas não vai aparecer na sua dashboard do Ubidots.
 
 
-/**** NÃO ALTERAR ESSE TOKEN
-const char *UBIDOTS_TOKEN = "PEGAR O TOKEN QUE CHEGOU NO SLACK PARA O SEU GRUPO"; //TODOS OS GRUPOS DEVEM USAR ESSE TOKEN DA CONTA INTELI UBIDOTS
-****/
 
 Ubidots ubidots(UBIDOTS_TOKEN, CLIENT_ID); //essa linha é novidade
 
@@ -127,7 +125,7 @@ void loop()
 #include "UbidotsEsp32Mqtt.h"
 
 const uint8_t pinLED = 22;
-const char *UBIDOTS_TOKEN = ""; //pegue o token no menu vertical esquerdo do seu ubidots quando criou um dispositivo novo
+const char *UBIDOTS_TOKEN = "PEGAR O TOKEN QUE CHEGOU NO SLACK PARA O SEU GRUPO"; //PROCURE PELO SEU TOKEN COM O SEU PROFESSOR DE PROG.
 const char *WIFI_SSID = "";      // lembrando que Apple não é compatível com o ESP32 que trabalha apenas no 2.4GHz
 const char *WIFI_PASS = "";      // Put here your Wi-Fi password
 const char *DEVICE_LABEL = "testegodoi";   // coloque o nome do device que você criou no "blank device"
@@ -193,17 +191,9 @@ void loop()
 /****************************************
  * Define Constants
  ****************************************/
-const char *UBIDOTS_TOKEN = "BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM";
-//BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM //general token from API Crendencial coordenacao.academica account
-//BBUS-v3fRsE5QFI6eDyvgiBwm3u4v2WSTSv //token from esp32_t12_godoi device
-//BBUS-zftuOL41hnKaF0AUqzW3UcFEFogW1C //token from tokenDocentes organization
-//BBUS-35LRaPsafOZZctwRRACedbFjMISPv1
-
+const char *UBIDOTS_TOKEN = "PEGAR O TOKEN QUE CHEGOU NO SLACK PARA O SEU GRUPO"; //PROCURE PELO SEU TOKEN COM O SEU PROFESSOR DE PROG.
 const char *WIFI_SSID = "Rede2Casa"; // Put here your Wi-Fi SSID
 const char *WIFI_PASS = "aa10082024"; // Put here your Wi-Fi password
-//const char *WIFI_SSID = "Rede1Casa-2G"; // Put here your Wi-Fi SSID
-//const char *WIFI_PASS = "aa10082024"; // Put here your Wi-Fi password
-
 const char *DEVICE_LABEL = "esp32_t12_godoi"; // Put here your Device label to which data  will be published
 const char *VARIABLE_LABEL1 = "potenciometro_no_proto"; // Put here your Variable label to which data  will be published
 const char *VARIABLE_LABEL2 = "botao_no_proto"; // Put here your Variable label to which data  will be published
