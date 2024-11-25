@@ -191,18 +191,27 @@ void loop()
 /****************************************
  * Define Constants
  ****************************************/
-const char *UBIDOTS_TOKEN = "PEGAR O TOKEN QUE CHEGOU NO SLACK PARA O SEU GRUPO"; //PROCURE PELO SEU TOKEN COM O SEU PROFESSOR DE PROG.
+const char *UBIDOTS_TOKEN = "BBUS-35LRaPsafOZZctwRRACedbFjMISPv1";
+//BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM //general token from API Crendencial coordenacao.academica account
+//BBUS-v3fRsE5QFI6eDyvgiBwm3u4v2WSTSv //token from esp32_t12_godoi device
+//BBUS-zftuOL41hnKaF0AUqzW3UcFEFogW1C //token from tokenDocentes organization
+//BBUS-35LRaPsafOZZctwRRACedbFjMISPv1
+
 const char *WIFI_SSID = "Rede2Casa"; // Put here your Wi-Fi SSID
 const char *WIFI_PASS = "aa10082024"; // Put here your Wi-Fi password
+//const char *WIFI_SSID = "Rede1Casa-2G"; // Put here your Wi-Fi SSID
+//const char *WIFI_PASS = "aa10082024"; // Put here your Wi-Fi password
+
 const char *DEVICE_LABEL = "esp32_t12_godoi"; // Put here your Device label to which data  will be published
 const char *VARIABLE_LABEL1 = "potenciometro_no_proto"; // Put here your Variable label to which data  will be published
 const char *VARIABLE_LABEL2 = "botao_no_proto"; // Put here your Variable label to which data  will be published
 const char *VARIABLE_LABEL3 = "botao_no_ubidots"; // Put here your Variable label to which data  will be published
 const char *CLIENT_ID = "godoi"; //PULO DO GATO! Coloque um nome qualquer que seja diferente dos demais integrantes
 
-const int PUBLISH_FREQUENCY = 3000; // Update rate in milliseconds
+const int PUBLISH_FREQUENCY1 = 5000; // Update rate in milliseconds
+const int PUBLISH_FREQUENCY2 = 2000; // Update rate in milliseconds
 
-unsigned long timer;
+unsigned long timer1, timer2;
 uint8_t pinPotenciometro = 34;
 uint8_t pinBotao = 33;
 uint8_t pinLED = 2;
@@ -251,9 +260,9 @@ void setup()
   ubidots.reconnect();
   pinMode(pinBotao, INPUT_PULLUP);
   pinMode(pinPotenciometro, INPUT);
-  pinMode(pinLED, OUTPUT);
 
-  timer = millis();
+  timer1 = millis();
+  timer2 = millis();
 }
 
 void loop()
@@ -263,25 +272,24 @@ void loop()
   {
     ubidots.reconnect();
   }
-  if (millis() - timer > PUBLISH_FREQUENCY) // triggers the routine every X seconds
+  if (millis() - timer1 > PUBLISH_FREQUENCY1) // triggers the routine every X seconds
   {
     float value1 = analogRead(pinPotenciometro);
     bool value2 = digitalRead(pinBotao);
     Serial.print("Valor do pot: ");
     Serial.println(value1);
-    Serial.print("Valor do botão no protoboard: ");
-    Serial.println(value2);
-    
     ubidots.add(VARIABLE_LABEL1, value1); // Insert your variable Labels and the value to be sent
-    delay(1000);
+    delay(500);
     ubidots.add(VARIABLE_LABEL2, value2); // Insert your variable Labels and the value to be sent
     ubidots.publish(DEVICE_LABEL); //pode usar um único publish para várias variáveis
-    delay(500);
+    timer1 = millis();
+  }
+
+
+  if (millis() - timer2 > PUBLISH_FREQUENCY2) // triggers the routine every X seconds
+  {
     ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL3); // Insert the dataSource and Variable's Labels
-    timer = millis();
-    //statusLED = !statusLED;
-    //digitalWrite(pinLED, statusLED); //LED indicador de funcionamento do hardware
-    
+    timer2 = millis();
   }
   ubidots.loop();
 }
