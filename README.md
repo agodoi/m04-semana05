@@ -173,7 +173,7 @@ void loop()
   if (!ubidots.connected())
   {
     ubidots.reconnect();
-    ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL1); // Insert the dataSource and Variable's Labels
+    ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL3); // Insert the dataSource and Variable's Labels
   }
   ubidots.loop();
 }
