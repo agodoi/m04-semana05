@@ -104,7 +104,7 @@ void loop()
     Serial.println(value2);
     
     ubidots.add(VARIABLE_LABEL1, value1); // Insert your variable Labels and the value to be sent
-    delay(1000);
+    delay(500);
     ubidots.add(VARIABLE_LABEL2, value2); // Insert your variable Labels and the value to be sent
     ubidots.publish(DEVICE_LABEL); //pode usar um único publish para várias variáveis
     timer = millis();
