@@ -188,8 +188,8 @@ void loop()
  * Define Constants
  ****************************************/
 const char *UBIDOTS_TOKEN = " ";
-//const char *WIFI_SSID = " "; // Put here your Wi-Fi SSID
-//const char *WIFI_PASS = " "; // Put here your Wi-Fi password
+const char *WIFI_SSID = " "; // Put here your Wi-Fi SSID
+const char *WIFI_PASS = " "; // Put here your Wi-Fi password
 
 const char *DEVICE_LABEL = "esp32_t12_godoi"; // Put here your Device label to which data  will be published
 const char *VARIABLE_LABEL1 = "potenciometro_no_proto"; // Put here your Variable label to which data  will be published
