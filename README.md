@@ -104,13 +104,9 @@ void loop()
     Serial.println(value2);
     
     ubidots.add(VARIABLE_LABEL1, value1); // Insert your variable Labels and the value to be sent
-    delay(500);
     ubidots.add(VARIABLE_LABEL2, value2); // Insert your variable Labels and the value to be sent
     ubidots.publish(DEVICE_LABEL); //pode usar um único publish para várias variáveis
     timer = millis();
-    //statusLED = !statusLED;
-    //digitalWrite(pinLED, statusLED); //LED indicador de funcionamento do hardware
-    
   }
   ubidots.loop();
 }
@@ -279,7 +275,6 @@ void loop()
     Serial.print("Valor do pot: ");
     Serial.println(value1);
     ubidots.add(VARIABLE_LABEL1, value1); // Insert your variable Labels and the value to be sent
-    delay(500);
     ubidots.add(VARIABLE_LABEL2, value2); // Insert your variable Labels and the value to be sent
     ubidots.publish(DEVICE_LABEL); //pode usar um único publish para várias variáveis
     timer1 = millis();
