@@ -23,7 +23,7 @@
 
 ### Clássico Código Envia Dados ao Broker [Ubidots]
 
-Se não quiser usar o Ubidots, basta substituir algumas linhas pelo HiveMQ.
+#### Alterem as variáveis com const char
 
 ```
 #include "UbidotsEsp32Mqtt.h"
@@ -31,22 +31,28 @@ Se não quiser usar o Ubidots, basta substituir algumas linhas pelo HiveMQ.
 /****************************************
  * Define Constants
  ****************************************/
-const char *UBIDOTS_TOKEN = ""; //pegue o token no menu vertical esquerdo de quando vc criou o "black device"
-const char *WIFI_SSID = "";      // Put here your Wi-Fi SSID
-const char *WIFI_PASS = "";      // Put here your Wi-Fi password
-const char *DEVICE_LABEL = "testeGodoi";   // pegue o nome do device que você criou do "blank device"
+
+const char *WIFI_SSID = ""; // Put here your Wi-Fi SSID
+const char *WIFI_PASS = ""; // Put here your Wi-Fi password
+
+const char *DEVICE_LABEL = "esp32_t12_godoi"; // Put here your Device label to which data  will be published
 const char *VARIABLE_LABEL1 = "potenciometro"; // Put here your Variable label to which data  will be published
 const char *VARIABLE_LABEL2 = "botao"; // Put here your Variable label to which data  will be published
+const char *CLIENT_ID = "godoi"; //PULO DO GATO! Coloque um nome qualquer que seja diferente dos demais integrantes
+
+
+/**** NÃO ALTERAR ESSE TOKEN
+const char *UBIDOTS_TOKEN = "BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM"; //TODOS OS GRUPOS DEVEM USAR ESSE TOKEN DA CONTA INTELI UBIDOTS
+****/
+
+Ubidots ubidots(UBIDOTS_TOKEN, CLIENT_ID); //essa linha é novidade
 
 const int PUBLISH_FREQUENCY = 6000; // Update rate in milliseconds
-
 unsigned long timer;
 uint8_t pinPotenciometro = 34;
 uint8_t pinBotao = 33;
 uint8_t pinLED = 2;
 bool statusLED = false;
-
-Ubidots ubidots(UBIDOTS_TOKEN);
 
 /****************************************
  * Auxiliar Functions
@@ -99,12 +105,12 @@ void loop()
     Serial.println(value2);
     
     ubidots.add(VARIABLE_LABEL1, value1); // Insert your variable Labels and the value to be sent
-    ubidots.publish(DEVICE_LABEL);
+    delay(1000);
     ubidots.add(VARIABLE_LABEL2, value2); // Insert your variable Labels and the value to be sent
-    ubidots.publish(DEVICE_LABEL);
+    ubidots.publish(DEVICE_LABEL); //pode usar um único publish para várias variáveis
     timer = millis();
     //statusLED = !statusLED;
-    //digitalWrite(pinLED, statusLED);
+    //digitalWrite(pinLED, statusLED); //LED indicador de funcionamento do hardware
     
   }
   ubidots.loop();
@@ -125,8 +131,9 @@ const char *WIFI_SSID = "";      // lembrando que Apple não é compatível com 
 const char *WIFI_PASS = "";      // Put here your Wi-Fi password
 const char *DEVICE_LABEL = "testegodoi";   // coloque o nome do device que você criou no "blank device"
 const char *VARIABLE_LABEL1 = "botao"; // Replace with your variable label to subscribe to
+const char *CLIENT_ID = "godoi"; //PULO DO GATO! Coloque um nome qualquer que seja diferente dos demais integrantes
 
-Ubidots ubidots(UBIDOTS_TOKEN);
+Ubidots ubidots(UBIDOTS_TOKEN, CLIENT_ID); //essa linha é novidade
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
