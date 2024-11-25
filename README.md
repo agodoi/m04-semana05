@@ -21,7 +21,7 @@
 ## Exemplos
 
 
-### Clássico Código Envia Dados ao Broker [Ubidots]
+### (1) Clássico Código Envia Dados ao Broker [Ubidots]
 
 #### Esse código está atualizado e funcionando. Alterem as variáveis com const char para as suas credenciais.
 
@@ -112,7 +112,7 @@ void loop()
 }
 ```
 
-### Clássio Código Recebe Dados do Broker [Ubidots]
+### (2) Clássio Código Recebe Dados do Broker [Ubidots]
 
 ## Acendendo um LED do Ubidots
 
@@ -179,7 +179,7 @@ void loop()
 }
 ```
 
-### Juntando Envia e Recebe Dados [Ubidots]
+### (3) Juntando Envia e Recebe Dados [Ubidots]
 
 ```
 #include "UbidotsEsp32Mqtt.h"
@@ -187,16 +187,9 @@ void loop()
 /****************************************
  * Define Constants
  ****************************************/
-const char *UBIDOTS_TOKEN = "BBUS-35LRaPsafOZZctwRRACedbFjMISPv1";
-//BBFF-L2UWDy9jLghHCxu8o0xL10OjOrWxcM //general token from API Crendencial coordenacao.academica account
-//BBUS-v3fRsE5QFI6eDyvgiBwm3u4v2WSTSv //token from esp32_t12_godoi device
-//BBUS-zftuOL41hnKaF0AUqzW3UcFEFogW1C //token from tokenDocentes organization
-//BBUS-35LRaPsafOZZctwRRACedbFjMISPv1
-
-const char *WIFI_SSID = "Rede2Casa"; // Put here your Wi-Fi SSID
-const char *WIFI_PASS = "aa10082024"; // Put here your Wi-Fi password
-//const char *WIFI_SSID = "Rede1Casa-2G"; // Put here your Wi-Fi SSID
-//const char *WIFI_PASS = "aa10082024"; // Put here your Wi-Fi password
+const char *UBIDOTS_TOKEN = " ";
+//const char *WIFI_SSID = " "; // Put here your Wi-Fi SSID
+//const char *WIFI_PASS = " "; // Put here your Wi-Fi password
 
 const char *DEVICE_LABEL = "esp32_t12_godoi"; // Put here your Device label to which data  will be published
 const char *VARIABLE_LABEL1 = "potenciometro_no_proto"; // Put here your Variable label to which data  will be published
@@ -204,8 +197,8 @@ const char *VARIABLE_LABEL2 = "botao_no_proto"; // Put here your Variable label 
 const char *VARIABLE_LABEL3 = "botao_no_ubidots"; // Put here your Variable label to which data  will be published
 const char *CLIENT_ID = "godoi"; //PULO DO GATO! Coloque um nome qualquer que seja diferente dos demais integrantes
 
-const int PUBLISH_FREQUENCY1 = 5000; // Update rate in milliseconds
-const int PUBLISH_FREQUENCY2 = 2000; // Update rate in milliseconds
+const int PUBLISH_FREQUENCY = 5000; // Update rate in milliseconds
+const int SUBSCRIBER_FREQUENCY = 2000; // Update rate in milliseconds
 
 unsigned long timer1, timer2;
 uint8_t pinPotenciometro = 34;
@@ -268,7 +261,7 @@ void loop()
   {
     ubidots.reconnect();
   }
-  if (millis() - timer1 > PUBLISH_FREQUENCY1) // triggers the routine every X seconds
+  if (millis() - timer1 > PUBLISH_FREQUENCY) // triggers the routine every X seconds
   {
     float value1 = analogRead(pinPotenciometro);
     bool value2 = digitalRead(pinBotao);
@@ -281,7 +274,7 @@ void loop()
   }
 
 
-  if (millis() - timer2 > PUBLISH_FREQUENCY2) // triggers the routine every X seconds
+  if (millis() - timer2 > SUBSCRIBER_FREQUENCY) // triggers the routine every X seconds
   {
     ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL3); // Insert the dataSource and Variable's Labels
     timer2 = millis();
