@@ -36,7 +36,7 @@ const char *WIFI_SSID = ""; // Put here your Wi-Fi SSID
 const char *WIFI_PASS = ""; // Put here your Wi-Fi password
 
 const char *UBIDOTS_TOKEN = "PEGAR O TOKEN QUE CHEGOU NO SLACK PARA O SEU GRUPO"; //PROCURE PELO SEU TOKEN COM O SEU PROFESSOR DE PROG.
-const char *DEVICE_LABEL = "esp32_t12_godoi"; // Coloque o nome do dispositivo que você deseja apelidar
+const char *DEVICE_LABEL = "esp32_t15_godoi"; // Coloque o nome do dispositivo que você deseja apelidar
 const char *VARIABLE_LABEL1 = "potenciometro"; // Coloque o nome da variável que deseja publicar
 const char *VARIABLE_LABEL2 = "botao"; // Outra variável que será publicada
 const char *CLIENT_ID = "godoi"; //PULO DO GATO! Coloque um nome qualquer para te identificar no Ubidots de 5 a 20 caracteres e que seja diferente dos demais integrantes
