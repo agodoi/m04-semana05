@@ -112,6 +112,10 @@ void loop()
 }
 ```
 
+![Arquitetura Ubidots](https://github.com/agodoi/m04-semana05/blob/main/imgs/esp32-pot.jpg)
+
+
+
 ### (2) Clássio Código Recebe Dados do Broker [Ubidots]
 
 ## Acendendo um LED do Ubidots
