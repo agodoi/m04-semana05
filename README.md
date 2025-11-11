@@ -2,7 +2,7 @@
 
 ## Terças e quintas. Professor de horário parcial. Nesses 2 dias, podem contar comigo!
 
-# Semana 05 - Comunicação à distância (Atividade Ponderada em sala)
+# Semana 05 - Comunicação à distância (Semana de Ponderada)
 
 * Comunicação entre o microcontrolador e os blocos externos. Comunicação WiFi com protocolo MQTT no ESP32. 
 
