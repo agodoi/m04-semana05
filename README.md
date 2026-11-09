@@ -4,6 +4,8 @@
 
 # Semana 05 - Comunicação à distância (Semana de Ponderada)
 
+**Turma: T29**
+
 * Comunicação entre o microcontrolador e os blocos externos: Wi-Fi e protocolo MQTT no ESP32.
 * Infraestrutura local de IoT: broker Mosquitto, Raspberry Pi 5 e Node-RED.
 * Modelo TCP/IP: acesso à rede, Internet, transporte e aplicação. Envio de dados de sensores e controle de um LED pela rede local.
@@ -45,7 +47,7 @@ Os endereços da tabela são para acesso pelo notebook na rede institucional do 
 
 ### Informações enviadas em privado ao grupo
 
-O professor enviará canal privado de cada grupo os dados da sua instância, incluindo **endereço do editor, endereço do dashboard, usuário, senha exclusiva e faixa de IDs**. Quando necessário, também orientará o grupo sobre a rede IoT e os arquivos de conexão. A senha do editor é para uso apenas pelos integrantes do próprio grupo: não a compartilhe com outras equipes, em canais abertos, imagens, vídeos, códigos ou repositórios. Não tente acessar ou alterar a instância de outro grupo. Se houver exposição da senha, avise o professor para que solicite a troca.
+O professor enviará ao representante ou ao canal privado de cada grupo os dados da sua instância, incluindo **endereço do editor, endereço do dashboard, usuário, senha exclusiva e faixa de IDs**. Quando necessário, também orientará o grupo sobre a rede IoT e os arquivos de conexão. A senha do editor é para uso apenas pelos integrantes do próprio grupo: não a compartilhe com outras equipes, em canais abertos, imagens, vídeos, códigos ou repositórios. Não tente acessar ou alterar a instância de outro grupo. Se houver exposição da senha, avise o professor para que solicite a troca.
 
 **Como usar os dados recebidos:**
 
@@ -57,12 +59,7 @@ O professor enviará canal privado de cada grupo os dados da sua instância, inc
 
 **Redes diferentes:** o ESP32 conecta-se à rede IoT da T29, `broker-f-iot`, usando a configuração do arquivo fornecido. O notebook normalmente acessa o Node-RED pelo Wi-Fi institucional. O endereço `10.128.0.39` é o acesso pela rede institucional; o endereço da interface IoT no material é `192.168.10.2`. Confirme o acesso e qualquer configuração especial com o professor. Se o endereço institucional estiver indisponível, procure o professor para verificar a alternativa pela rede IoT; não compartilhe publicamente a senha dessa rede.
 
-### Se o ESP32 não aparecer
-
-* Confira se o sketch e o cabeçalho são da pasta `esp32_broker-f` da T29.
-* Confira se o ID está na faixa do seu grupo e se outra placa não usa o mesmo número. IDs duplicados podem causar desconexões repetidas; o tempo de funcionamento pode voltar a zero.
-* Veja se o tópico inscrito no `mqtt in` corresponde exatamente ao ID gravado e se o fluxo recebeu **Deploy**.
-* Verifique a conexão e o endereço do broker configurado com a orientação do professor. Se o problema persistir, peça ao professor para conferir o painel de acompanhamento da turma.
+Se o ESP32 ou o dashboard não funcionar como esperado, consulte a seção **Diagnóstico e resolução de problemas**, após a parte prática.
 
 ## Exemplos
 
@@ -304,6 +301,82 @@ O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `P
 
 **Rede e acesso:** o endereço da interface IoT é `192.168.10.2`; no navegador conectado à rede institucional, a T29 utiliza `10.128.0.39` e a porta do grupo. Os endereços são diferentes porque o Raspberry Pi possui duas interfaces. Se necessário, o Node-RED que roda no próprio Raspberry Pi poderá utilizar o endereço do broker configurado pelo administrador; não presuma que os IPs das duas redes sejam iguais.
 
+## Diagnóstico e resolução de problemas
+
+Depois de montar e testar o circuito, use este roteiro quando o ESP32, o broker ou o dashboard não funcionar como esperado. Siga o caminho dos dados para localizar a etapa com problema:
+
+**Sensor → ESP32 → Wi-Fi IoT → Mosquitto → Node-RED → dashboard**
+
+Comece pelas verificações que o grupo pode fazer no seu próprio ESP32 e na sua própria instância do Node-RED. Verificações do Raspberry Pi, serviços, roteador e rede institucional são responsabilidade do professor ou da equipe autorizada.
+
+### 1. O ESP32 não aparece ou reinicia repetidamente
+
+1. Confirme que a placa está energizada, que o cabo USB também transmite dados e que a placa e a porta corretas foram selecionadas na Arduino IDE.
+2. Confirme que você usou a pasta **`esp32_broker-f`**, destinada à T29, e o `inteli_broker.h` fornecido para essa turma. Não modifique o cabeçalho para tentar corrigir a rede; consulte o professor caso suspeite de erro no arquivo.
+3. Verifique se o ID informado em `InteliBroker.begin()` pertence à faixa do seu grupo e é diferente do ID usado por qualquer outra placa ligada. IDs MQTT duplicados podem provocar desconexões alternadas. Se usar os exemplos com `PubSubClient` diretamente, confira também se cada `CLIENTE_ID` é único.
+4. Abra **Ferramentas → Monitor Serial** na Arduino IDE e selecione **115200 baud**. Observe mensagens de conexão ou reinicializações. O texto exibido depende do sketch e da versão da biblioteca: uma saída sem mensagens não confirma, por si só, uma falha de Wi-Fi. O código `b4` ou reinicializações repetidas podem indicar falha de conexão; confira o contexto exibido.
+5. Verifique se a rede **`broker-f-iot`** está visível. Se não estiver, ou se o problema persistir, informe o professor. Nos exemplos que usam a conexão diretamente, confirme com o professor os dados da rede e do broker; não divulgue senhas.
+
+### 2. O ESP32 conecta ao Wi-Fi, mas não ao MQTT
+
+A conexão Wi-Fi e a conexão ao broker são etapas diferentes. Nos exemplos que exibem esses estados, um IP recebido pelo ESP32 indica conexão à rede, mas não comprova que o MQTT esteja conectado.
+
+* Confirme que o ESP32 está usando a rede IoT da T29, não a rede institucional do notebook.
+* Nos exemplos com `PubSubClient` diretamente, confira o endereço da interface IoT do broker, `192.168.10.2`, e a porta MQTT `1883`. Com `inteli_broker.h`, use o arquivo da T29 sem alterá-lo e solicite ajuda caso haja dúvida sobre a configuração.
+* Se o programa informar um código de falha de conexão MQTT, registre-o e avise o professor. Em `PubSubClient`, por exemplo, `-2` indica falha na conexão de rede, `-4` indica tempo de resposta esgotado e `5` indica conexão não autorizada; esses códigos não determinam sozinhos a causa exata.
+* Se a falha continuar, o professor poderá verificar o Mosquitto, a rede e o roteador.
+
+### 3. O ESP32 conecta, mas os dados não chegam ao dashboard
+
+1. Abra o editor do **seu grupo** e localize o node `mqtt in`. Verifique se ele indica conexão ativa com o broker. Caso não esteja conectado, peça orientação ao professor antes de mudar a configuração compartilhada do fluxo.
+2. Confira se o tópico inscrito corresponde ao ID gravado. Por exemplo, para o ID **222**, o tópico é `inteli/iot/222/telemetria`; outro ID exige o número correspondente no tópico.
+3. Conecte a saída do `mqtt in` a um node `debug`, selecione a aba **Debug** e clique em **Deploy**. Aguarde pelo menos um intervalo de publicação e verifique se o payload aparece. No exemplo padrão, a biblioteca publica aproximadamente a cada cinco segundos enquanto estiver conectada.
+4. Se a mensagem aparece no `debug`, mas não no dashboard, verifique se o JSON foi convertido em objeto, se o campo correto foi selecionado, se o widget pertence à página e ao grupo esperados e se o fluxo foi implantado. Para um medidor, confira também se o valor recebido é numérico.
+5. Se a mensagem não aparece no `debug`, registre o ID e o tópico e peça ao professor para verificar se ela chegou ao broker.
+
+### 4. O dashboard não abre, está vazio ou o editor rejeita o acesso
+
+* **Página não abre:** confira se o notebook está na rede institucional, se o endereço usa `10.128.0.39` e se a porta corresponde ao seu grupo. O editor usa `http://10.128.0.39:PORTA`; o dashboard da sala usa `http://10.128.0.39:PORTA/ui`. Substitua `PORTA` pela porta informada na tabela da T29. Se a falha continuar, avise o professor.
+* **Dashboard abre vazio:** confirme que está no endereço do seu grupo; no editor, veja se os nodes de interface estão conectados e configurados e se as alterações foram publicadas com **Deploy**. O professor poderá verificar a instalação e a configuração do dashboard.
+* **Login rejeitado:** confira o usuário e a senha recebidos em privado, respeitando maiúsculas e minúsculas, e verifique se abriu o editor do grupo correto. Não envie a senha em canal aberto. Se o problema continuar, procure o professor; a configuração de autenticação deve ser verificada pela equipe responsável.
+* **Caminho da interface:** nas instâncias da sala, o material indica `/ui`. Se o ambiente tiver configuração diferente, confirme o endereço com o professor; `/dashboard` pode ser usado em outras instalações, mas não deve ser presumido para a T29.
+
+### 5. O LED não responde ao comando
+
+1. Confira a montagem: GPIO correto, resistor em série, polaridade do LED e GND. Desligue a alimentação antes de alterar as conexões.
+2. Verifique se o ESP32 está conectado ao broker e se o tópico publicado pelo Node-RED é exatamente o mesmo ao qual o ESP32 está inscrito. Depois de editar o fluxo, clique em **Deploy**.
+3. Nos exemplos deste material, envie o texto `1` para ligar e `0` para desligar; outros valores são rejeitados. Acompanhe o Monitor Serial para identificar o comando recebido.
+4. Após uma queda de conexão, confira se o sketch refez a inscrição. Se houver dúvida, teste o fluxo usando `inject → mqtt out` e peça apoio ao professor.
+
+### 6. Informações para pedir ajuda
+
+Informe ao professor **o grupo, o ID do ESP32, a etapa que falhou, o tópico utilizado, a mensagem de erro e o que já foi testado**. Uma captura do Monitor Serial ou do `debug` pode ajudar, desde que não mostre senhas, credenciais ou informações de outros grupos.
+
+### Apoio ao professor: diagnóstico da infraestrutura
+
+O guia completo também apresenta procedimentos para Mosquitto, Node-RED, SSH, roteador, serviços após reinicialização e desempenho. Esses passos são destinados ao professor ou à equipe autorizada, pois uma alteração no Raspberry Pi ou roteador pode afetar a turma inteira. Não compartilhe acesso administrativo ou credenciais com os alunos.
+
+Para o broker F, com o notebook conectado à rede institucional e acesso autorizado, as verificações abaixo são exemplos **de leitura** no Raspberry Pi:
+
+```bash
+# Estado do Mosquitto e da instância do grupo 3
+systemctl status mosquitto
+systemctl status nodered-grupo3
+
+# Interfaces e portas (MQTT e editor do grupo 3)
+ip addr show eth0
+ip addr show eth1
+ss -tln | grep -E '1883|1873'
+
+# Últimos eventos do broker e da instância do grupo 3
+journalctl -u mosquitto -n 30 --no-pager
+journalctl -u nodered-grupo3 -n 30 --no-pager
+```
+
+O grupo 3 e a porta 1873 são exemplos; substitua pelo grupo e porta correspondentes. O acesso aos logs pode depender das permissões da conta. Se as mensagens chegam ao Mosquitto, mas não ao dashboard, verifique o fluxo e o serviço da instância. Antes de reiniciar serviços, restaurar backups, instalar pacotes ou alterar rede e autenticação, avalie o impacto nos grupos e siga os procedimentos administrativos da instituição.
+
+Para aprofundar o diagnóstico, consulte o **Troubleshooting — Brokers IoT Inteli**, de André Godoi e Vinicius Hiroshi, fornecido como material de apoio. O guia inclui testes MQTT, roteador, conectividade SSH, recuperação de fluxos, recursos do Raspberry Pi e verificação de serviços após reinicialização.
+
 ## Comentário do código
 
 * `InteliBroker.begin(ID_DISPOSITIVO)` configura e inicia a conexão usando o arquivo distribuído pelo professor.
@@ -323,6 +396,47 @@ InteliBroker.loop();
 
 Os campos são agrupados no JSON publicado em `inteli/iot/<ID>/telemetria`; o broker distribui a mensagem aos assinantes. No Node-RED, use `mqtt in`, converta o JSON para objeto e selecione cada propriedade. O MQTT não cria variáveis, dashboards ou histórico automaticamente.
 
+## Ponderada da Semana
+
+Você começou a estagiar no Departamento de Engenharia de Trânsito e ficou responsável por controlar o fluxo em uma via movimentada do bairro Butantã. Seu desafio é montar e programar um semáforo que garanta a segurança de pedestres e veículos, seguindo a lógica de tempo de cada fase das luzes, desde a montagem dos LEDs até a programação da sequência correta. Agora, você tem a chance de aplicar seus conhecimentos e desenvolver um sistema essencial para o controle do trânsito. Será que você consegue criar um semáforo que funcione perfeitamente, como aqueles que encontramos nas ruas todos os dias?
+
+### Parte 1: Montagem Física do Semáforo
+(ver na Adalove)
+
+### Parte 2: Programação e Lógica do Semáforo
+(ver na Adalove)
+
+### Parte 3: Avaliação de Pares
+(ver na Adalove)
+
+### Entregas
+
+* Poste em seu repositório pessoal do GitHub uma foto da sua montagem física (protoboard com LEDs conectados);
+* Breve relato explicando como foi feita a montagem e as conexões, adicione uma tabela com as especificações dos componentes utilizados;
+* Adicione também em seu repositório do GitHub o código da programação do semáforo;
+* Um vídeo demonstrando o funcionamento do semáforo (LEDs acendendo e apagando conforme o código);
+* Certifique-se de que o tempo de cada fase está correto.
+* Adicionalmente, você também deve postar os resultados dos testes com os nomes completos dos avaliadores.
+
+Observações importantes:
+1. Cada circuito deverá ser testado por dois avaliadores diferentes e os resultados devem ser apresentados com identificação dos avaliadores (nome completo).
+2. As avaliações serão validadas por monitores e instrutores.
+3. Caso seja identificado avaliações que não fazem sentido com os entregáveis, haverá desconto de até 5 pontos na nota do avaliador.
+4. Caso o avaliado não tenha apresentado as evidências de entrega (foto da montagem, tabela de componentes, código desenvolvido e vídeo de funcionamento) ou estas evidências estiverem inacessíveis, a atividade será passível de ser anulada.
+5. A nota será a média simples das duas avaliações, salvo os casos descritos acima.
+
+
+### Tabela de Avaliação entre Pares
+
+#### Avaliador: Nome do Avaliador
+
+|Critério|	Contempla (Pontos)|	Contempla Parcialmente (Pontos)	|Não Contempla (Pontos)	|Observações do Avaliador|
+|-|-|-|-|-|
+|Montagem física com cores corretas, boa disposição dos fios e uso adequado de resistores	|Até 3	|Até 1,5	|0 | |	
+|Temporização adequada conforme tempos medidos com auxílio de algum instrumento externo	|Até 3	|Até 1,5	|0 | |	
+|Código implementa corretamente as fases do semáforo e estrutura do código (variáveis representativas e comentários) |	Até 3|	Até 1,5 |	0 | |	
+|Ir além: Implementou um componente de extra, fez com millis() ao invés do delay() e/ou usou ponteiros no código |	Até 1 |	Até 0,5 |	0 | |	
+| | | | |Pontuação Total|
 
 ## Referência da Prática
 
