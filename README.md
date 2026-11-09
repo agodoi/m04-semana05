@@ -47,7 +47,7 @@ Os endereços da tabela são para acesso pelo notebook na rede institucional do 
 
 ### Informações enviadas em privado ao grupo
 
-O professor enviará no canal privado de cada grupo os dados da sua instância, incluindo **endereço do editor, endereço do dashboard, usuário, senha exclusiva e faixa de IDs**. Quando necessário, também orientará o grupo sobre a rede IoT e os arquivos de conexão. A senha do editor é para uso apenas pelos integrantes do próprio grupo: não a compartilhe com outras equipes, em canais abertos, imagens, vídeos, códigos ou repositórios. Não tente acessar ou alterar a instância de outro grupo. Se houver exposição da senha, avise o professor para que solicite a troca.
+O professor enviará ao representante ou ao canal privado de cada grupo os dados da sua instância, incluindo **endereço do editor, endereço do dashboard, usuário, senha exclusiva e faixa de IDs**. Quando necessário, também orientará o grupo sobre a rede IoT e os arquivos de conexão. A senha do editor é para uso apenas pelos integrantes do próprio grupo: não a compartilhe com outras equipes, em canais abertos, imagens, vídeos, códigos ou repositórios. Não tente acessar ou alterar a instância de outro grupo. Se houver exposição da senha, avise o professor para que solicite a troca.
 
 **Como usar os dados recebidos:**
 
@@ -64,6 +64,78 @@ Se o ESP32 ou o dashboard não funcionar como esperado, consulte a seção **Dia
 ## Exemplos
 
 **Antes de começar:** obtenha com o professor o arquivo `inteli_broker.h`, o identificador único do ESP32, as informações da rede IoT, os endereços e a porta da instância Node-RED do grupo. Instale o suporte ao ESP32 e a biblioteca **PubSubClient** na Arduino IDE. A biblioteca `WiFi.h` faz parte do pacote da placa ESP32. Não publique credenciais em repositórios públicos.
+
+### Entendendo o arquivo `inteli_broker.h`
+
+O arquivo `.h` é um **cabeçalho** incluído no programa do ESP32. Nesta aula, ele reúne as configurações de rede e a implementação da biblioteca `InteliBroker`: conexão Wi-Fi, comunicação MQTT, tentativas de reconexão e publicação da telemetria. O arquivo que será usado de fato é o da pasta **`esp32_broker-f`**, disponibilizado para a T29 pelo professor.
+
+A configuração do arquivo real é preparada pelo professor. **O grupo não deve editar esse `.h`**: no arquivo `.ino`, cada ESP32 recebe apenas um ID livre da faixa do grupo. O trecho abaixo é uma representação didática comentada das configurações descritas no material da infraestrutura. Ele não contém a implementação completa da biblioteca e **não funciona como substituto do arquivo fornecido**.
+
+```cpp
+// EXEMPLO DIDÁTICO: este trecho não é o arquivo completo da aula.
+#ifndef INTELI_BROKER_H
+#define INTELI_BROKER_H
+// As duas linhas acima ajudam a evitar inclusão repetida do cabeçalho.
+
+#include <WiFi.h>          // Conexão do ESP32 à rede Wi-Fi.
+#include <PubSubClient.h>  // Comunicação MQTT com o broker.
+
+// Identificação da rede IoT da T29.
+#define IB_WIFI_SSID "broker-f-iot"
+
+// Senha omitida neste material. O cabeçalho fornecido pelo professor
+// já contém a configuração necessária; não publique credenciais.
+#define IB_WIFI_PASS "SENHA_CONFIGURADA_PELO_PROFESSOR"
+
+// Endereço do Raspberry Pi na rede IoT e porta do serviço MQTT.
+#define IB_BROKER_IP "192.168.10.2"
+#define IB_BROKER_PORT 1883
+
+// Prefixo do tópico MQTT usado para os dispositivos da turma.
+#define IB_TOPIC "inteli/iot"
+
+// Intervalo de publicação em milissegundos: 5000 ms = 5 s.
+#define IB_INTERVAL_MS 5000
+
+// No arquivo real, também há uma classe que implementa:
+// - begin(ID): prepara a conexão e identifica o ESP32;
+// - send(chave, valor): acrescenta dados à próxima mensagem;
+// - loop(): mantém a comunicação e publica periodicamente.
+// Essa implementação foi omitida aqui para destacar as configurações.
+
+#endif // INTELI_BROKER_H
+```
+
+**O que cada dado faz:**
+
+| Configuração | Utilidade na aula |
+|---|---|
+| `IB_WIFI_SSID` e `IB_WIFI_PASS` | Permitem ao ESP32 conectar-se à rede IoT da sala. A senha da rede não é a senha do editor Node-RED. |
+| `IB_BROKER_IP` | Indica ao ESP32 o endereço do Raspberry Pi **na rede IoT**. O notebook acessa o Node-RED pela rede institucional usando outro endereço, `10.128.0.39`. |
+| `IB_BROKER_PORT` | Indica a porta do serviço MQTT: `1883`. As portas `1871` a `1875` são usadas pelas instâncias Node-RED dos grupos. |
+| `IB_TOPIC` | É o prefixo do tópico de telemetria. O arquivo real acrescenta o ID e `/telemetria`; por exemplo, para o ID `222`, resulta em `inteli/iot/222/telemetria`. |
+| `IB_INTERVAL_MS` | Define no arquivo real o intervalo entre publicações periódicas. O valor apresentado no material da infraestrutura é de cinco segundos. |
+
+#### Relação entre o `.ino` e o `.h`
+
+O sketch `.ino` e o cabeçalho fornecido devem estar na mesma pasta do projeto. O `.ino` inclui o `.h`, informa um ID e usa os métodos da biblioteca. Exemplo para o **Grupo 3**, com ID `222` disponível:
+
+```cpp
+#include "inteli_broker.h"  // Usa o arquivo completo fornecido para a T29.
+
+void setup() {
+  Serial.begin(115200);
+  InteliBroker.begin(222); // Escolha um ID livre na faixa do seu grupo.
+}
+
+void loop() {
+  InteliBroker.loop(); // Mantém a conexão e cuida da publicação periódica.
+}
+```
+
+Esse exemplo mínimo publica a telemetria padrão da biblioteca, sem adicionar leitura de sensor. Para incluir valores próprios, consulte o exemplo 1, que usa `InteliBroker.send(...)`. A senha e o usuário recebidos em privado para o **editor Node-RED** são informados no navegador; eles não devem ser inseridos em `InteliBroker.begin()` nem confundidos com a configuração da rede Wi-Fi.
+
+> **Atenção:** se o `.h` distribuído contiver senha de Wi-Fi ou outros dados reservados, não o publique em repositório público, prints ou vídeos. Mantenha o arquivo local e consulte o professor sobre como compartilhar o projeto sem credenciais.
 
 ### (1) Código para enviar dados ao broker local
 
@@ -395,6 +467,48 @@ InteliBroker.loop();
 ```
 
 Os campos são agrupados no JSON publicado em `inteli/iot/<ID>/telemetria`; o broker distribui a mensagem aos assinantes. No Node-RED, use `mqtt in`, converta o JSON para objeto e selecione cada propriedade. O MQTT não cria variáveis, dashboards ou histórico automaticamente.
+
+## Ponderada da Semana
+
+Você começou a estagiar no Departamento de Engenharia de Trânsito e ficou responsável por controlar o fluxo em uma via movimentada do bairro Butantã. Seu desafio é montar e programar um semáforo que garanta a segurança de pedestres e veículos, seguindo a lógica de tempo de cada fase das luzes, desde a montagem dos LEDs até a programação da sequência correta. Agora, você tem a chance de aplicar seus conhecimentos e desenvolver um sistema essencial para o controle do trânsito. Será que você consegue criar um semáforo que funcione perfeitamente, como aqueles que encontramos nas ruas todos os dias?
+
+### Parte 1: Montagem Física do Semáforo
+(ver na Adalove)
+
+### Parte 2: Programação e Lógica do Semáforo
+(ver na Adalove)
+
+### Parte 3: Avaliação de Pares
+(ver na Adalove)
+
+### Entregas
+
+* Poste em seu repositório pessoal do GitHub uma foto da sua montagem física (protoboard com LEDs conectados);
+* Breve relato explicando como foi feita a montagem e as conexões, adicione uma tabela com as especificações dos componentes utilizados;
+* Adicione também em seu repositório do GitHub o código da programação do semáforo;
+* Um vídeo demonstrando o funcionamento do semáforo (LEDs acendendo e apagando conforme o código);
+* Certifique-se de que o tempo de cada fase está correto.
+* Adicionalmente, você também deve postar os resultados dos testes com os nomes completos dos avaliadores.
+
+Observações importantes:
+1. Cada circuito deverá ser testado por dois avaliadores diferentes e os resultados devem ser apresentados com identificação dos avaliadores (nome completo).
+2. As avaliações serão validadas por monitores e instrutores.
+3. Caso seja identificado avaliações que não fazem sentido com os entregáveis, haverá desconto de até 5 pontos na nota do avaliador.
+4. Caso o avaliado não tenha apresentado as evidências de entrega (foto da montagem, tabela de componentes, código desenvolvido e vídeo de funcionamento) ou estas evidências estiverem inacessíveis, a atividade será passível de ser anulada.
+5. A nota será a média simples das duas avaliações, salvo os casos descritos acima.
+
+
+### Tabela de Avaliação entre Pares
+
+#### Avaliador: Nome do Avaliador
+
+|Critério|	Contempla (Pontos)|	Contempla Parcialmente (Pontos)	|Não Contempla (Pontos)	|Observações do Avaliador|
+|-|-|-|-|-|
+|Montagem física com cores corretas, boa disposição dos fios e uso adequado de resistores	|Até 3	|Até 1,5	|0 | |	
+|Temporização adequada conforme tempos medidos com auxílio de algum instrumento externo	|Até 3	|Até 1,5	|0 | |	
+|Código implementa corretamente as fases do semáforo e estrutura do código (variáveis representativas e comentários) |	Até 3|	Até 1,5 |	0 | |	
+|Ir além: Implementou um componente de extra, fez com millis() ao invés do delay() e/ou usou ponteiros no código |	Até 1 |	Até 0,5 |	0 | |	
+| | | | |Pontuação Total|
 
 ## Referência da Prática
 
