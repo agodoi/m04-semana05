@@ -31,6 +31,77 @@ O acesso ao dashboard pela rede institucional depende da configuração da sala;
 
 O ESP32 publica uma mensagem em um **tópico**. O broker a encaminha para clientes inscritos nesse tópico, como o Node-RED. Para enviar um comando ao ESP32, o fluxo é inverso: o Node-RED publica em um tópico de comando e o ESP32, inscrito nele, recebe a mensagem.
 
+## O que acontece dentro do broker Mosquitto?
+
+O **Mosquitto** é o programa que atua como broker MQTT no Raspberry Pi. Sua principal função é receber publicações dos clientes e encaminhá-las aos clientes interessados. Para compreender o percurso, imagine um ESP32 como publicador e o Node-RED como assinante.
+
+> **Antes de começar:** os passos abaixo apresentam o funcionamento lógico de uma troca MQTT, tomando como referência o MQTT 3.1.1. Eles não são uma reprodução linha a linha do código-fonte interno do Mosquitto. Recursos como autenticação, permissões, persistência e limites dependem da configuração efetiva do broker da sala.
+
+### Exemplo que vamos acompanhar
+
+O ESP32 de ID `222`, pertencente à faixa do Grupo 3, envia uma leitura no tópico:
+
+```text
+inteli/iot/222/telemetria
+```
+
+O conteúdo da mensagem, chamado **payload**, pode ser um texto em formato JSON, por exemplo:
+
+```json
+{"device":222,"potenciometro":2048,"botao":0}
+```
+
+O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em condições normais, o ESP32 chega ao Mosquitto pela rede IoT da sala, e o notebook acessa o editor e o dashboard do Node-RED pela rede do Inteli.
+
+### Fluxo por etapas: da conexão à saída
+
+1. **O ESP32 estabelece uma conexão de rede.** A placa conecta-se ao Wi-Fi `broker-f-iot` e abre uma conexão TCP com o endereço do Raspberry Pi na rede IoT, `192.168.10.2`, na porta MQTT `1883`. A conexão TCP é o caminho por onde os pacotes MQTT trafegam.
+
+2. **O ESP32 se apresenta ao broker.** Pela conexão aberta, o cliente envia um pacote MQTT `CONNECT` com informações como versão do protocolo, identificador do cliente e parâmetros da sessão. Caso configuradas, credenciais também podem acompanhar a conexão. O Mosquitto verifica a validade da solicitação e, conforme sua configuração, autentica ou recusa o cliente. Ele responde com `CONNACK`, indicando se a conexão MQTT foi aceita. A senha do editor Node-RED não é automaticamente a senha MQTT.
+
+3. **O Node-RED também se conecta e informa seu interesse.** Um node `mqtt in` funciona como cliente MQTT: depois de se conectar ao broker, envia um `SUBSCRIBE` com um filtro de tópico, por exemplo `inteli/iot/222/telemetria`, e o QoS máximo desejado. O Mosquitto registra a inscrição se ela for autorizada e responde com `SUBACK`, informando o resultado. Essa etapa pode ter ocorrido antes da publicação do ESP32.
+
+4. **O ESP32 prepara os dados.** O sketch coleta as leituras e monta o payload. No exemplo, ele representa `device`, `potenciometro` e `botao` como texto JSON. A biblioteca acrescenta ao pacote MQTT o nome do tópico, o QoS de publicação e outras informações aplicáveis, como a indicação de mensagem retida. O payload não precisa ser JSON: MQTT pode transportar outros tipos de conteúdo em bytes.
+
+5. **O Mosquitto recebe o pacote `PUBLISH`.** A partir do fluxo de dados recebido pela conexão TCP, o broker identifica o pacote MQTT e examina suas informações de protocolo, incluindo tópico, QoS, indicador de retenção e tamanho. O payload é a parte que contém os dados da aplicação. Os campos apresentados em um pacote dependem da versão do protocolo e do QoS utilizado.
+
+6. **O broker verifica se a publicação é permitida.** O Mosquitto aplica a configuração disponível, como permissões de publicação no tópico, limites de tamanho e regras de autenticação ou autorização. Se uma verificação falhar, o tratamento depende da configuração e da versão do MQTT. Na arquitetura da aula, o fato de cada grupo ter uma instância de Node-RED própria não comprova, por si só, que há bloqueio entre tópicos no broker; isso depende das permissões configuradas nele.
+
+7. **O broker trata o payload como dados da aplicação.** Na operação MQTT comum, o Mosquitto **não precisa interpretar o JSON** para encaminhar a mensagem: ele trabalha com o tópico e os metadados MQTT e transporta o conteúdo como uma sequência de bytes. Assim, ele não calcula a média do potenciômetro, não cria automaticamente variáveis e não verifica se `botao` é `0` ou `1`. Um JSON inválido pode ser encaminhado e só causar erro quando uma aplicação tentar interpretá-lo. Configurações, extensões ou aplicações específicas podem adicionar tratamento próprio.
+
+8. **O broker procura inscrições compatíveis.** O Mosquitto compara o nome do tópico publicado com os filtros das inscrições registradas. Não é necessário existir uma lista prévia de tópicos criada manualmente: clientes autorizados podem publicar e se inscrever conforme a configuração do broker. Exemplos para a publicação `inteli/iot/222/telemetria`:
+
+   * `inteli/iot/222/telemetria` → corresponde exatamente ao tópico.
+   * `inteli/iot/+/telemetria` → corresponde, pois `+` substitui um nível, aqui o ID `222`.
+   * `inteli/iot/#` → corresponde ao prefixo e aos níveis restantes.
+   * `inteli/iot/223/telemetria` → não corresponde, pois o ID é diferente.
+
+   Os curingas são usados em **filtros de inscrição**, não no nome do tópico enviado em uma publicação. Inscrever-se em tópicos de outros grupos só deve ocorrer se houver autorização e necessidade na atividade.
+
+9. **O broker encaminha a mensagem.** Para cada assinante elegível cuja inscrição corresponda ao tópico, o Mosquitto prepara o envio por sua conexão MQTT. O Node-RED recebe uma nova publicação contendo o tópico e o payload. Se houver outros assinantes autorizados com filtros compatíveis, eles também podem receber a mensagem. Se nenhum assinante estiver conectado ou elegível, a publicação comum não cria automaticamente um histórico para consulta posterior; mensagens retidas e sessões persistentes podem alterar esse comportamento conforme as condições descritas abaixo.
+
+10. **O QoS controla as confirmações.** Em QoS 0, não há confirmação MQTT de entrega; em QoS 1, o receptor confirma com `PUBACK`, e a mensagem pode ser entregue mais de uma vez; em QoS 2, há uma troca adicional de pacotes para garantir a entrega exatamente uma vez no âmbito do protocolo. O trecho ESP32 → broker e o trecho broker → Node-RED têm confirmações próprias. Na entrega a um assinante, o QoS não supera o QoS da publicação nem o máximo concedido à inscrição. Assim, uma publicação com QoS 0 permanece QoS 0 mesmo que o Node-RED peça QoS 1. A biblioteca `PubSubClient` dos exemplos publica em QoS 0.
+
+11. **O Node-RED interpreta e usa os dados.** Após o recebimento, o node `mqtt in` disponibiliza o tópico em `msg.topic` e o payload em `msg.payload`. Conforme a configuração, o payload pode chegar como texto ou buffer. Um node `json` pode convertê-lo em objeto; depois, outro node acessa `msg.payload.potenciometro`, por exemplo. O fluxo pode exibir o valor em um medidor, alimentar um gráfico, executar uma regra ou enviar dados a um banco configurado separadamente.
+
+12. **O caminho inverso também é possível.** Para acionar um LED, o Node-RED pode publicar `1` ou `0` em um tópico de comando, como `inteli/t29/grupo3/comando`. O Mosquitto verifica as inscrições compatíveis e encaminha o comando; o ESP32 inscrito interpreta o payload e altera o estado do GPIO. Receber uma confirmação MQTT não prova que o LED acendeu: essa verificação exige retorno de estado ou observação do circuito.
+
+### O broker armazena as mensagens?
+
+* **Mensagem comum:** o Mosquitto faz o encaminhamento conforme as inscrições e regras da sessão; ele não é automaticamente um banco de dados histórico.
+* **Mensagem retida (`retain`):** quando publicada com essa opção e aceita pelo broker, a última mensagem retida de um tópico pode ser enviada a um novo assinante compatível. É útil para conhecer um último estado, mas não substitui um histórico. O comportamento e a persistência em disco dependem do QoS, da configuração e da operação do broker; não presuma que o recurso esteja habilitado ou sendo usado nos exemplos da aula.
+* **Sessão persistente:** conforme versão do MQTT, parâmetros de sessão e configuração, o broker pode manter inscrições e enfileirar determinadas mensagens de QoS 1 ou 2 para um cliente temporariamente desconectado. Isso não significa guardar todas as mensagens para sempre.
+* **Histórico de leituras:** para consultar dados antigos ou montar séries históricas duráveis, configure um serviço de armazenamento apropriado e um fluxo de gravação. O gráfico exibido pelo Node-RED também precisa de configuração adequada para preservar dados.
+
+### Resumo do caminho dos dados
+
+* **ESP32:** lê o sensor, monta o payload e publica no tópico MQTT.
+* **Mosquitto:** recebe o pacote, verifica as regras aplicáveis, identifica as inscrições compatíveis e encaminha o payload.
+* **Node-RED:** interpreta o conteúdo, processa os campos e apresenta os resultados.
+* **Dashboard:** mostra a informação ao grupo pelo navegador conectado à rede do Inteli.
+
+Referências técnicas: [Conceitos MQTT — Eclipse Mosquitto](https://mosquitto.org/man/mqtt-7.html) e [Especificação MQTT 3.1.1 — OASIS](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html).
+
 ## Acesso à infraestrutura da T29
 
 A T29 utiliza o **broker F**, exclusivo da turma. Todos os grupos da T29 usam esse broker, mas cada grupo tem sua própria instância do Node-RED e uma faixa de IDs para seus ESP32. Não use o broker nem os arquivos de outra turma.
