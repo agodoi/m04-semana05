@@ -4,459 +4,326 @@
 
 # Semana 05 - Comunicação à distância (Semana de Ponderada)
 
-* Comunicação entre o microcontrolador e os blocos externos. Comunicação WiFi com protocolo MQTT no ESP32. 
+**Turma: T29**
 
-* Apresentação do Ubidots e suas vantagens
+* Comunicação entre o microcontrolador e os blocos externos: Wi-Fi e protocolo MQTT no ESP32.
+* Infraestrutura local de IoT: broker Mosquitto, Raspberry Pi 5 e Node-RED.
+* Modelo TCP/IP: acesso à rede, Internet, transporte e aplicação. Envio de dados de sensores e controle de um LED pela rede local.
 
-* Modelo TCP/IP: rede, Internet, transporte, aplicação. Controle de um LED por meio da Internet.
+## Arquitetura da infraestrutura local
 
-## Arquitetura Ubidots
+O Raspberry Pi 5 da sala executa o **Mosquitto**, broker MQTT responsável por encaminhar mensagens, e o **Node-RED**, ferramenta para processamento e visualização dos dados. O ESP32 conecta-se ao Wi-Fi isolado de IoT; o notebook acessa o Node-RED pela rede institucional. As duas interfaces de rede do Raspberry Pi atendem a esses ambientes.
 
-![Arquitetura Ubidots](https://github.com/agodoi/m04-semana05/blob/main/imgs/arquiteturaUbidots.jpg)
+```mermaid
+flowchart LR
+    S[Sensor] --> E[ESP32]
+    E -- MQTT pela rede IoT --> B["Raspberry Pi: Mosquitto"]
+    B --> N[Node-RED]
+    N --> D["Dashboard no navegador"]
+    N -- Comando MQTT --> B
+    B --> E
+    E --> L[LED]
+```
 
-## Funcionamento do Ubidots
+O acesso ao dashboard pela rede institucional depende da configuração da sala; isso não significa que o broker esteja disponível pela Internet.
 
-![Fluxograma MQTT](https://github.com/agodoi/m04-semana05/blob/main/imgs/fluxogramaMqtt.png)
+## Funcionamento da comunicação MQTT
+
+O ESP32 publica uma mensagem em um **tópico**. O broker a encaminha para clientes inscritos nesse tópico, como o Node-RED. Para enviar um comando ao ESP32, o fluxo é inverso: o Node-RED publica em um tópico de comando e o ESP32, inscrito nele, recebe a mensagem.
+
+## Acesso à infraestrutura da T29
+
+A T29 utiliza o **broker F**, exclusivo da turma. Todos os grupos da T29 usam esse broker, mas cada grupo tem sua própria instância do Node-RED e uma faixa de IDs para seus ESP32. Não use o broker nem os arquivos de outra turma.
+
+| Grupo | Faixa de IDs dos ESP32 | Editor Node-RED | Dashboard |
+|---|---|---|---|
+| 1 | 206 a 213 | http://10.128.0.39:1871 | http://10.128.0.39:1871/ui |
+| 2 | 214 a 221 | http://10.128.0.39:1872 | http://10.128.0.39:1872/ui |
+| 3 | 222 a 229 | http://10.128.0.39:1873 | http://10.128.0.39:1873/ui |
+| 4 | 230 a 237 | http://10.128.0.39:1874 | http://10.128.0.39:1874/ui |
+| 5 | 238 a 245 | http://10.128.0.39:1875 | http://10.128.0.39:1875/ui |
+
+Os endereços da tabela são para acesso pelo notebook na rede institucional do Inteli. O **editor** permite construir e alterar os fluxos; o **dashboard** apresenta a interface do projeto. Segundo as orientações da infraestrutura, o dashboard pode ser aberto sem senha: não exiba nele informações sensíveis. A instância de acompanhamento do professor é separada e restrita aos orientadores.
+
+### Informações enviadas em privado ao grupo
+
+O professor enviará ao representante ou ao canal privado de cada grupo os dados da sua instância, incluindo **endereço do editor, endereço do dashboard, usuário, senha exclusiva e faixa de IDs**. Quando necessário, também orientará o grupo sobre a rede IoT e os arquivos de conexão. A senha do editor é para uso apenas pelos integrantes do próprio grupo: não a compartilhe com outras equipes, em canais abertos, imagens, vídeos, códigos ou repositórios. Não tente acessar ou alterar a instância de outro grupo. Se houver exposição da senha, avise o professor para que solicite a troca.
+
+**Como usar os dados recebidos:**
+
+1. No notebook conectado à rede institucional, abra o **editor** do seu grupo e informe o usuário e a senha recebidos em privado. Use essa instância para editar seus fluxos e publicar as alterações com **Deploy**.
+2. Abra o endereço de **dashboard** do mesmo grupo no navegador para acompanhar a interface. O endereço termina em `/ui` e não é o endereço MQTT que deve ser usado no código.
+3. Escolha um ID da faixa do seu grupo para cada ESP32. Cada placa ligada ao mesmo tempo deve ter um ID diferente. Informe esse ID no sketch da turma; ele identifica o dispositivo e compõe seu tópico de telemetria.
+4. Utilize a pasta **`esp32_broker-f`** da T29, disponível nos [arquivos das turmas](https://drive.google.com/drive/folders/1yMFV9cq6ox71upvA42jXMI8lO3n-V_IV?usp=sharing), e siga a orientação do professor. Altere o ID passado a `InteliBroker.begin()` e não modifique `inteli_broker.h`. O cabeçalho contém a configuração da sala e deve ser tratado como arquivo sensível; não o publique no GitHub se contiver credenciais.
+5. No Node-RED, configure o recebimento para o tópico do seu ESP32, por exemplo, `inteli/iot/222/telemetria` para o ID 222. Use a conexão MQTT já configurada na instância ou siga as informações fornecidas pelo professor. Na rede IoT, a porta MQTT é **1883**; as portas 1871 a 1875 são usadas pelo editor e dashboard, não pelo MQTT.
+
+**Redes diferentes:** o ESP32 conecta-se à rede IoT da T29, `broker-f-iot`, usando a configuração do arquivo fornecido. O notebook normalmente acessa o Node-RED pelo Wi-Fi institucional. O endereço `10.128.0.39` é o acesso pela rede institucional; o endereço da interface IoT no material é `192.168.10.2`. Confirme o acesso e qualquer configuração especial com o professor. Se o endereço institucional estiver indisponível, procure o professor para verificar a alternativa pela rede IoT; não compartilhe publicamente a senha dessa rede.
+
+### Se o ESP32 não aparecer
+
+* Confira se o sketch e o cabeçalho são da pasta `esp32_broker-f` da T29.
+* Confira se o ID está na faixa do seu grupo e se outra placa não usa o mesmo número. IDs duplicados podem causar desconexões repetidas; o tempo de funcionamento pode voltar a zero.
+* Veja se o tópico inscrito no `mqtt in` corresponde exatamente ao ID gravado e se o fluxo recebeu **Deploy**.
+* Verifique a conexão e o endereço do broker configurado com a orientação do professor. Se o problema persistir, peça ao professor para conferir o painel de acompanhamento da turma.
 
 ## Exemplos
 
+**Antes de começar:** obtenha com o professor o arquivo `inteli_broker.h`, o identificador único do ESP32, as informações da rede IoT, os endereços e a porta da instância Node-RED do grupo. Instale o suporte ao ESP32 e a biblioteca **PubSubClient** na Arduino IDE. A biblioteca `WiFi.h` faz parte do pacote da placa ESP32. Não publique credenciais em repositórios públicos.
 
-### (1) Clássico Código Envia Dados ao Broker [Ubidots]
+### (1) Código para enviar dados ao broker local
 
-#### Esse código está atualizado e funcionando. Alterem as variáveis com const char para as suas credenciais.
+Salve `inteli_broker.h` fornecido pelo professor na mesma pasta do sketch. Não altere esse arquivo. O exemplo usa o ID `222`, pertencente ao Grupo 3 da T29. Substitua-o por um ID disponível da faixa do seu grupo; não repita um ID que outra placa já esteja usando. O exemplo lê um potenciômetro no GPIO 34 e um botão no GPIO 33, configurado com resistor interno de pull-up. Ligue o botão entre GPIO 33 e GND; no exemplo, pressionado equivale a 1.
 
-```
-#include "UbidotsEsp32Mqtt.h"
+```cpp
+#include "inteli_broker.h"
 
-/****************************************
- * Define Constants
- ****************************************/
+const int ID_DISPOSITIVO = 222; // ID único informado pelo professor
+const int PINO_POTENCIOMETRO = 34;
+const int PINO_BOTAO = 33;
+unsigned long ultimaLeitura = 0;
+const unsigned long INTERVALO_LEITURA = 5000;
 
-const char *WIFI_SSID = ""; // Put here your Wi-Fi SSID
-const char *WIFI_PASS = ""; // Put here your Wi-Fi password
-
-const char *UBIDOTS_TOKEN = "PEGAR O TOKEN QUE CHEGOU NO SLACK PARA O SEU GRUPO"; //PROCURE PELO SEU TOKEN COM O SEU PROFESSOR DE PROG.
-const char *DEVICE_LABEL = "esp32_t15_godoi"; // Coloque o nome do dispositivo que você deseja apelidar
-const char *VARIABLE_LABEL1 = "potenciometro"; // Coloque o nome da variável que deseja publicar
-const char *VARIABLE_LABEL2 = "botao"; // Outra variável que será publicada
-const char *CLIENT_ID = "godoi"; //PULO DO GATO! Coloque um nome qualquer para te identificar no Ubidots de 5 a 20 caracteres e que seja diferente dos demais integrantes
-//esse cliente_id é apenas para não sobrepor os tópicos dentro da conta do Ubidots. Ele é importante aqui no código, mas não vai aparecer na sua dashboard do Ubidots.
-
-
-
-Ubidots ubidots(UBIDOTS_TOKEN, CLIENT_ID); //essa linha é novidade
-
-const int PUBLISH_FREQUENCY = 3000; // Update rate in milliseconds
-unsigned long timer;
-uint8_t pinPotenciometro = 34;
-uint8_t pinBotao = 33;
-uint8_t pinLED = 2;
-bool statusLED = false;
-
-/****************************************
- * Auxiliar Functions
- ****************************************/
-
-void callback(char *topic, byte *payload, unsigned int length)
-{
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++)
-  {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-}
-
-/****************************************
- * Main Functions
- ****************************************/
-
-void setup()
-{
-  // put your setup code here, to run once:
+void setup() {
   Serial.begin(115200);
-  ubidots.setDebug(true);  // uncomment this to make debug messages available
-  ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
-  ubidots.setCallback(callback);
-  ubidots.setup();
-  ubidots.reconnect();
-  pinMode(pinBotao, INPUT_PULLUP);
-  pinMode(pinPotenciometro, INPUT);
-  pinMode(pinLED, OUTPUT);
-
-  timer = millis();
+  pinMode(PINO_POTENCIOMETRO, INPUT);
+  pinMode(PINO_BOTAO, INPUT_PULLUP);
+  InteliBroker.begin(ID_DISPOSITIVO);
 }
 
-void loop()
-{
-  // put your main code here, to run repeatedly:
-  if (!ubidots.connected())
-  {
-    ubidots.reconnect();
+void loop() {
+  // Adiciona uma leitura antes de o serviço publicar a mensagem.
+  if (millis() - ultimaLeitura >= INTERVALO_LEITURA) {
+    ultimaLeitura = millis();
+    int potenciometro = analogRead(PINO_POTENCIOMETRO);
+    int botao = digitalRead(PINO_BOTAO) == LOW ? 1 : 0;
+    InteliBroker.send("potenciometro", potenciometro);
+    InteliBroker.send("botao", botao);
+    Serial.printf("Potenciometro: %d | Botao: %d\n", potenciometro, botao);
   }
-  if (millis() - timer > PUBLISH_FREQUENCY) // triggers the routine every X seconds
-  {
-    float value1 = analogRead(pinPotenciometro);
-    bool value2 = digitalRead(pinBotao);
-    Serial.println(value1);
-    Serial.println(value2);
-    
-    ubidots.add(VARIABLE_LABEL1, value1); // Insert your variable Labels and the value to be sent
-    ubidots.add(VARIABLE_LABEL2, value2); // Insert your variable Labels and the value to be sent
-    ubidots.publish(DEVICE_LABEL); //pode usar um único publish para várias variáveis
-    timer = millis();
-  }
-  ubidots.loop();
+  InteliBroker.loop();
 }
 ```
 
-![Arquitetura Ubidots](https://github.com/agodoi/m04-semana05/blob/main/imgs/esp32-pot.jpg)
+Com a configuração descrita no material, a publicação ocorre a cada 5 segundos no tópico `inteli/iot/222/telemetria`, quando o ID é 222. O JSON inclui os campos de telemetria da biblioteca e os valores adicionados com `send()`. Os campos extras são esvaziados após cada publicação; evite acrescentar repetidamente o mesmo campo entre duas publicações. Para testar, inscreva um node **mqtt in** nesse tópico e conecte-o a um **debug**.
 
+> Use alimentação e tensão compatíveis com o ESP32: a entrada analógica não deve receber tensão acima de 3,3 V. Confira a pinagem da sua placa.
 
+### (2) Código para receber comandos e acender um LED
 
-### (2) Clássio Código Recebe Dados do Broker [Ubidots]
+O arquivo `inteli_broker.h` apresentado no material automatiza a publicação, mas **não oferece um método de inscrição em tópicos**. Por isso, este exemplo independente usa `WiFi.h` e `PubSubClient` diretamente; não inclua `inteli_broker.h` no mesmo sketch. Solicite ao professor os dados da rede IoT e a configuração de autenticação do broker. Este exemplo usa a configuração direta somente com autorização do professor; a senha do editor Node-RED não deve ser colocada no código do ESP32. O exemplo abaixo pressupõe que o broker aceite conexão sem usuário e senha; se exigir autenticação MQTT, ajuste a conexão conforme as instruções do professor.
 
-## Acendendo um LED do Ubidots
+Monte um LED externo: GPIO 2 → resistor de 330 Ω → ânodo do LED; cátodo → GND. Confira a pinagem da placa. No Node-RED, publique texto `1` ou `0` no tópico de comando do grupo. Ajuste o nome do tópico e `CLIENTE_ID` ao seu grupo e dispositivo. Preencha a senha de Wi-Fi apenas localmente quando autorizada e não publique o arquivo com a senha.
 
-```
+```cpp
 #include <WiFi.h>
-#include "UbidotsEsp32Mqtt.h"
+#include <PubSubClient.h>
 
-const uint8_t pinLED = 22;
-const char *UBIDOTS_TOKEN = "PEGAR O TOKEN QUE CHEGOU NO SLACK PARA O SEU GRUPO"; //PROCURE PELO SEU TOKEN COM O SEU PROFESSOR DE PROG.
-const char *WIFI_SSID = "";      // lembrando que Apple não é compatível com o ESP32 que trabalha apenas no 2.4GHz
-const char *WIFI_PASS = "";      // Put here your Wi-Fi password
-const char *DEVICE_LABEL = "testegodoi";   // coloque o nome do device que você criou no "blank device"
-const char *VARIABLE_LABEL3 = "botao_no_ubidots"; // Replace with your variable label to subscribe to
-const char *CLIENT_ID = "godoi"; //PULO DO GATO! Coloque um nome qualquer que seja diferente dos demais integrantes
+const char* WIFI_SSID = "broker-f-iot";
+const char* WIFI_SENHA = "SENHA_REDE_IOT";
+const char* BROKER_IP = "192.168.10.2"; // confirme o endereço com o professor
+const int BROKER_PORTA = 1883;
+const char* CLIENTE_ID = "esp32-grupo3-comando"; // único no broker
+const char* TOPICO_COMANDO = "inteli/t29/grupo3/comando";
+const int PINO_LED = 2;
 
-Ubidots ubidots(UBIDOTS_TOKEN, CLIENT_ID); //essa linha é novidade
+WiFiClient rede;
+PubSubClient mqtt(rede);
+unsigned long ultimaTentativa = 0;
 
-void callback(char *topic, byte *payload, unsigned int length)
-{
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++)
-  {
-    Serial.print((char)payload[i]);
-  }
-  
-  String message;
-  for (int i = 0; i < length; i++) {
-    message += (char)payload[i];
-  }
-  int state = message.toInt();
-  if (state == 1) {
-    Serial.println("\nLED ligado");
-  } else {
-    Serial.println("\nLED desligado");
-  }
-  Serial.println("");
- 
+void aoReceber(char* topico, byte* payload, unsigned int tamanho) {
+  String mensagem;
+  for (unsigned int i = 0; i < tamanho; i++) mensagem += (char)payload[i];
+  mensagem.trim();
+  if (mensagem == "1") digitalWrite(PINO_LED, HIGH);
+  else if (mensagem == "0") digitalWrite(PINO_LED, LOW);
+  else { Serial.println("Comando invalido: use 0 ou 1"); return; }
+  Serial.printf("Topico: %s | Comando: %s\n", topico, mensagem.c_str());
 }
 
-
-void setup()
-{
-  // put your setup code here, to run once:
+void setup() {
   Serial.begin(115200);
-  ubidots.setDebug(true);  // uncomment this to make debug messages available
-  ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
-  ubidots.setCallback(callback);
-  ubidots.setup();
-  ubidots.reconnect();
-  ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL3); // Insert the dataSource and Variable's Labels
+  pinMode(PINO_LED, OUTPUT);
+  digitalWrite(PINO_LED, LOW);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_SENHA);
+  mqtt.setServer(BROKER_IP, BROKER_PORTA);
+  mqtt.setCallback(aoReceber);
 }
 
-void loop()
-{
-  // put your main code here, to run repeatedly:
-  if (!ubidots.connected())
-  {
-    ubidots.reconnect();
-    ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL3); // Insert the dataSource and Variable's Labels
+void loop() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  if (!mqtt.connected() && millis() - ultimaTentativa >= 2000) {
+    ultimaTentativa = millis();
+    if (mqtt.connect(CLIENTE_ID)) mqtt.subscribe(TOPICO_COMANDO, 1);
   }
-  ubidots.loop();
+  mqtt.loop();
 }
 ```
 
-### (3) Juntando Envia e Recebe Dados [Ubidots]
+Após reconectar ao broker, o sketch refaz a inscrição. A primeira tentativa de conexão MQTT ocorre até dois segundos após iniciar. O ESP32 e o broker precisam estar alcançáveis pela rede IoT. As credenciais de acesso ao editor Node-RED não são necessariamente credenciais MQTT.
 
-```
-#include "UbidotsEsp32Mqtt.h"
+### (3) Juntando envio e recebimento de dados
 
-/****************************************
- * Define Constants
- ****************************************/
-const char *UBIDOTS_TOKEN = " ";
-const char *WIFI_SSID = " "; // Put here your Wi-Fi SSID
-const char *WIFI_PASS = " "; // Put here your Wi-Fi password
+Este sketch independente também usa `PubSubClient` diretamente, pois o cabeçalho apresentado não implementa assinatura. Ajuste rede, IP, ID e tópicos conforme a sala. Ele publica um JSON com potenciômetro e botão e recebe comandos para o LED. Não utilize este exemplo simultaneamente ao exemplo 1 no mesmo ESP32.
 
-const char *DEVICE_LABEL = "esp32_t12_godoi"; // Put here your Device label to which data  will be published
-const char *VARIABLE_LABEL1 = "potenciometro_no_proto"; // Put here your Variable label to which data  will be published
-const char *VARIABLE_LABEL2 = "botao_no_proto"; // Put here your Variable label to which data  will be published
-const char *VARIABLE_LABEL3 = "botao_no_ubidots"; // Put here your Variable label to which data  will be published
-const char *CLIENT_ID = "godoi"; //PULO DO GATO! Coloque um nome qualquer que seja diferente dos demais integrantes
+```cpp
+#include <WiFi.h>
+#include <PubSubClient.h>
 
-const int PUBLISH_FREQUENCY = 5000; // Update rate in milliseconds
-const int SUBSCRIBER_FREQUENCY = 2000; // Update rate in milliseconds
+const char* WIFI_SSID = "broker-f-iot";
+const char* WIFI_SENHA = "SENHA_REDE_IOT";
+const char* BROKER_IP = "192.168.10.2"; // confirme o endereço com o professor
+const int BROKER_PORTA = 1883;
+const char* CLIENTE_ID = "esp32-grupo3-completo"; // único no broker
+const char* TOPICO_DADOS = "inteli/iot/222/telemetria";
+const char* TOPICO_COMANDO = "inteli/t29/grupo3/comando";
+const int ID_DISPOSITIVO = 222;
+const int PINO_POTENCIOMETRO = 34, PINO_BOTAO = 33, PINO_LED = 2;
+const unsigned long INTERVALO = 5000;
+unsigned long ultimaPublicacao = 0, ultimaTentativa = 0;
+WiFiClient rede;
+PubSubClient mqtt(rede);
 
-unsigned long timer1, timer2;
-uint8_t pinPotenciometro = 34;
-uint8_t pinBotao = 33;
-uint8_t pinLED = 2;
-bool statusLED = false;
-
-Ubidots ubidots(UBIDOTS_TOKEN, CLIENT_ID);
-
-/****************************************
- * Auxiliar Functions
- ****************************************/
-
-void callback(char *topic, byte *payload, unsigned int length)
-{
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++)
-  {
-    Serial.print((char)payload[i]);
-  }
-  
-  String message;
-  for (int i = 0; i < length; i++) {
-    message += (char)payload[i];
-  }
-  int state = message.toInt();
-  if (state == 1) {
-    Serial.println("\nLED ligado");
-  } else {
-    Serial.println("\nLED desligado");
-  }
-  Serial.println("");
+void aoReceber(char* topico, byte* payload, unsigned int tamanho) {
+  String mensagem;
+  for (unsigned int i = 0; i < tamanho; i++) mensagem += (char)payload[i];
+  mensagem.trim();
+  if (mensagem == "1") digitalWrite(PINO_LED, HIGH);
+  else if (mensagem == "0") digitalWrite(PINO_LED, LOW);
+  else { Serial.println("Comando invalido"); return; }
+  Serial.printf("Topico: %s | Comando: %s\n", topico, mensagem.c_str());
 }
-/****************************************
- * Main Functions
- ****************************************/
 
-void setup()
-{
-  // put your setup code here, to run once:
+void setup() {
   Serial.begin(115200);
-  ubidots.setDebug(true);  // uncomment this to make debug messages available
-  ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
-  ubidots.setCallback(callback);
-  ubidots.setup();
-  ubidots.reconnect();
-  pinMode(pinBotao, INPUT_PULLUP);
-  pinMode(pinPotenciometro, INPUT);
-
-  timer1 = millis();
-  timer2 = millis();
+  pinMode(PINO_POTENCIOMETRO, INPUT);
+  pinMode(PINO_BOTAO, INPUT_PULLUP);
+  pinMode(PINO_LED, OUTPUT);
+  digitalWrite(PINO_LED, LOW);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_SENHA);
+  mqtt.setServer(BROKER_IP, BROKER_PORTA);
+  mqtt.setCallback(aoReceber);
 }
 
-void loop()
-{
-  // put your main code here, to run repeatedly:
-  if (!ubidots.connected())
-  {
-    ubidots.reconnect();
+void loop() {
+  if (WiFi.status() != WL_CONNECTED) return;
+  if (!mqtt.connected() && millis() - ultimaTentativa >= 2000) {
+    ultimaTentativa = millis();
+    if (mqtt.connect(CLIENTE_ID)) mqtt.subscribe(TOPICO_COMANDO, 1);
   }
-  if (millis() - timer1 > PUBLISH_FREQUENCY) // triggers the routine every X seconds
-  {
-    float value1 = analogRead(pinPotenciometro);
-    bool value2 = digitalRead(pinBotao);
-    Serial.print("Valor do pot: ");
-    Serial.println(value1);
-    ubidots.add(VARIABLE_LABEL1, value1); // Insert your variable Labels and the value to be sent
-    ubidots.add(VARIABLE_LABEL2, value2); // Insert your variable Labels and the value to be sent
-    ubidots.publish(DEVICE_LABEL); //pode usar um único publish para várias variáveis
-    timer1 = millis();
+  if (!mqtt.connected()) return;
+  mqtt.loop();
+  if (millis() - ultimaPublicacao >= INTERVALO) {
+    ultimaPublicacao = millis();
+    char mensagem[128];
+    snprintf(mensagem, sizeof(mensagem),
+      "{\"device\":%d,\"potenciometro\":%d,\"botao\":%d}",
+      ID_DISPOSITIVO, analogRead(PINO_POTENCIOMETRO),
+      digitalRead(PINO_BOTAO) == LOW ? 1 : 0);
+    if (mqtt.publish(TOPICO_DADOS, mensagem)) Serial.println(mensagem);
+    else Serial.println("Falha ao publicar");
   }
-
-
-  if (millis() - timer2 > SUBSCRIBER_FREQUENCY) // triggers the routine every X seconds
-  {
-    ubidots.subscribeLastValue(DEVICE_LABEL, VARIABLE_LABEL3); // Insert the dataSource and Variable's Labels
-    timer2 = millis();
-  }
-  ubidots.loop();
 }
 ```
+
+O ID 222 e o tópico de comando são exemplos para o Grupo 3: ajuste-os à faixa e ao tópico do seu grupo, usando um `CLIENTE_ID` único por placa. O JSON deste exemplo é simplificado: ele não acrescenta automaticamente os campos `seq`, `rssi`, `uptime_ms` e `reconnects` da biblioteca do professor. Se a estrutura do grupo depender desses campos, combine a adaptação com o professor. A publicação usando `PubSubClient.publish()` ocorre em **QoS 0**; a inscrição acima solicita QoS 1, mas a entrega depende também do QoS da publicação. Para publicar em QoS 1, é necessária uma biblioteca MQTT com suporte a esse recurso ou outra implementação aprovada pelo professor.
 
 # Teoria Completa
 
 # Comunicação à Distância
 
-Nesse encontro, veremos como a comunicação entre o microcontrolador e os blocos externos acontece, como por exemplo, como o ESP32 utiliza a comunicação WiFi com o protocolo MQTT passando pelas camadas de Rede, Internet, Transporte e Aplicação. A parte prática será o controle de um LED por meio da Internet e Ubidots.
+A comunicação ocorre quando ESP32, broker e aplicação trocam mensagens por uma rede. Nesta aula, usamos uma rede local: o ESP32 coleta dados, o Mosquitto os encaminha e o Node-RED os apresenta ou processa. O mesmo caminho permite que uma aplicação envie comandos ao microcontrolador.
 
-## Arquitetura do projeto usando Ubidots
+## Arquitetura do projeto com broker local
 
-Confira na figura a seguir, como será o seu projeto usando a plataforma Ubidots.
+* **ESP32:** conecta sensores e atuadores à rede Wi-Fi IoT e atua como cliente MQTT.
+* **Raspberry Pi 5:** computador da sala conectado à rede IoT pela interface Ethernet nativa e à rede institucional por adaptador Ethernet USB.
+* **Mosquitto:** broker que recebe publicações e as distribui aos clientes inscritos.
+* **Node-RED:** ambiente de programação visual que recebe e processa mensagens, cria painéis e publica comandos.
+* **Notebook:** acessa a instância do grupo no Node-RED usando a rede institucional.
 
-O Ubidots é uma plataforma IoT que oferece uma variedade de recursos para facilitar o desenvolvimento e gerenciamento de projetos IoT. Vatagens:
+A infraestrutura local permite trabalhar dentro da rede da sala, com autonomia de configuração e baixa latência. Disponibilidade, segurança e capacidade dependem da configuração e administração do ambiente. Um broker MQTT, por si só, **não é um banco de dados nem cria dashboards**: persistência, visualização e regras precisam ser implementadas nos serviços apropriados.
 
-1. **Interface Amigável:** O Ubidots possui uma interface de usuário intuitiva e amigável, o que facilita a configuração, monitoramento e análise de dados do seu dispositivo IoT. Não precisa desenvolver seu front-end nesse projeto.
+## Modelo TCP/IP e MQTT
 
-2. **Suporte a Diversos Dispositivos e Protocolos:** A plataforma suporta uma variedade de dispositivos e alguns protocolos IoT (MQTT e HTTP), permitindo a integração fácil de diferentes tipos de sensores e hardware. Em especial, vamos usar o protocolo MQTT e a quantidade de sensor que o ESP32 suportar.
+| Camada | Papel na prática |
+|---|---|
+| Acesso à rede | O Wi-Fi conecta o ESP32 à rede do roteador IoT. |
+| Internet | O IP identifica dispositivos e permite encaminhar pacotes entre redes configuradas. |
+| Transporte | O TCP mantém a conexão usada pelo MQTT; o broker da sala utiliza a porta 1883. |
+| Aplicação | O MQTT organiza a publicação e a assinatura de mensagens por tópicos. |
 
-3. **Visualização de Dados em Tempo Real:** Fornece ferramentas para visualização de dados em tempo real, incluindo gráficos e dashboards personalizáveis, permitindo que os usuários monitorem facilmente o status de seus dispositivos IoT.
+A porta 1883 não garante criptografia. Autenticação, permissões e eventual TLS dependem da configuração informada pelo professor.
 
-4. **Regras e Ações Personalizadas:** Permite a configuração de regras e ações personalizadas com base nos dados coletados, facilitando a automação e a resposta a eventos específicos.
+## Documentação da infraestrutura
 
-5. **Segurança:** Oferece recursos de segurança robustos para proteger os dados transmitidos e armazenados, garantindo a integridade e confidencialidade das informações.
+[Infraestrutura IoT do Inteli — Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html)
 
-6. **Escalabilidade:** A plataforma é projetada para ser escalável, permitindo que os usuários aumentem o número de dispositivos conectados e gerenciem grandes frotas de dispositivos IoT.
+Consulte o material do Inteli para obter detalhes de Node-RED, QoS, configuração do ambiente e biblioteca distribuída pelo professor.
 
-7. **Facilidade de Conectividade:** Simplifica a configuração de conexões entre dispositivos e a nuvem, proporcionando uma experiência mais suave para os desenvolvedores.
+## Diagrama de blocos do funcionamento
 
-8. **Suporte Técnico:** Oferece suporte técnico para ajudar os desenvolvedores a superar desafios e resolver problemas durante a implementação de projetos IoT.
+1. **Conexão à rede:** o ESP32 conecta-se ao Wi-Fi isolado do roteador IoT; o notebook utiliza a rede institucional.
+2. **Identificação:** cada ESP32 usa um ID único. Com a biblioteca da aula, o ID compõe o tópico de telemetria.
+3. **Leitura:** o firmware coleta os valores dos sensores.
+4. **Publicação:** a biblioteca adiciona os valores à mensagem JSON e publica no Mosquitto; por exemplo, `inteli/iot/222/telemetria`.
+5. **Distribuição:** o broker encaminha a mensagem aos clientes inscritos no tópico.
+6. **Processamento e visualização:** um fluxo Node-RED recebe, transforma e exibe os dados no debug ou dashboard.
+7. **Comando:** um fluxo Node-RED pode publicar em um tópico de comando; um ESP32 inscrito interpreta a mensagem e aciona o LED.
+8. **Armazenamento e regras:** são opcionais e precisam ser configurados em componentes próprios ou fluxos do Node-RED.
 
-<picture>
-   <source media="(prefers-color-scheme: light)" srcset="https://github.com/agodoi/m04-semana06/blob/main/imgs/arquitetura_geral_mqtt.jpg">
-   <img alt="Família ESP32" src="[YOUR-DEFAULT-IMAGE](https://github.com/agodoi/m04-semana06/blob/main/imgs/arquitetura_geral_mqtt.jpg)">
-</picture>
+### Dados da mensagem
 
-O Ubidots é uma plataforma IoT baseada em nuvem que permite a coleta, armazenamento, visualização e análise de dados provenientes de dispositivos IoT. O processo de como os dados chegam ao Ubidots, são validados por meio de token e processados pelas informações do dispositivo IoT geralmente segue os seguintes passos:
+O MQTT transporta um **payload**, cujo formato é definido pela aplicação. Na biblioteca da aula, a telemetria é enviada em JSON. Exemplo ilustrativo:
 
-## Documentação Ubidots
+```json
+{"device":222,"seq":42,"rssi":-55,"uptime_ms":210000,"reconnects":1,"potenciometro":2048,"botao":0}
+```
 
-[Referência](https://docs.ubidots.com/reference/welcome)
+`device` identifica o ESP32; `seq` é a sequência; `rssi` representa a intensidade do sinal Wi-Fi; `uptime_ms` é o tempo desde a inicialização, em milissegundos; e `reconnects` registra conexões na implementação fornecida. Os demais campos são adicionados pelo projeto. `uptime_ms` não é data e hora: se precisar de carimbo de tempo real, implemente a obtenção de horário e defina seu formato e unidade. Outros dados, como texto ou coordenadas, podem ser incluídos no JSON quando previstos pela aplicação.
 
-[Códigos](https://github.com/ubidots)
+### Tópicos e QoS
 
-[Exemplos de Desenvolvimento](https://dev.ubidots.com/devices/industrial-iot?_gl=1*dmqooy*_ga*NDExMzY1MTYxLjE2OTQ1NDI2MTA.*_ga_VEME7QQ5EZ*MTcwMDY1NzMwNy4xNi4xLjE3MDA2NTc1MDguNjAuMC4w)
+Tópicos organizam as mensagens hierarquicamente, como `inteli/iot/222/telemetria` e `inteli/t29/grupo3/comando`. Publicador e assinante precisam usar tópicos compatíveis. Na inscrição, `+` corresponde a um nível e `#` aos níveis restantes.
 
-[Exemplo de Projetos](https://www.hackster.io/ubidots/projects)
+* **QoS 0:** no máximo uma entrega; mensagens podem se perder.
+* **QoS 1:** pelo menos uma entrega; podem ocorrer duplicações.
+* **QoS 2:** exatamente uma entrega no protocolo, com maior custo de comunicação.
 
-## Diagrama de Blocos do Funcionamento
-
-1. **Criação de uma Conta e Projeto:**
-   - Primeiramente, você precisa criar uma conta no Ubidots e iniciar um projeto. Durante esse processo, você obtém um token de acesso exclusivo associado ao seu projeto. Para esse caso do Inteli, você terá que abrir a sua conta pessoal Ubidots e ainda, terá outra conta que será criada pela coordenação/instrutor de programação. Essa segunda conta será a oficial do seu projeto. Hoje vamos criar a sua conta pessoal, e depois, num segundo momento, chegará a segunda conta. Essa segunda conta estará no nome do representante do grupo, mas a senha será pública entre as pessoas do mesmo grupo.
-
-2. **Registro do Dispositivo:**
-   - Para cada dispositivo IoT que você deseja conectar ao Ubidots, você precisará registrá-lo no seu projeto com um label. Isso é feito no seu código-fonte do ESP32 e o Ubidots criará automaticamente caso ele nãop esteja criado. Veja o diagrama de blocos a seguir para melhor entender.
-
-3. **Integração do Dispositivo com a API Ubidots:**
-   - No firmware ou software do seu dispositivo IoT, você incorporará a lógica para enviar dados para o Ubidots usando a API fornecida pela plataforma. Isso geralmente é feito por meio de solicitações HTTP ou MQTT, dependendo do protocolo que você escolheu no seu projeto. Nesse projeto, vamos focar no MQTT.
-
-4. **Envio de Dados para o Ubidots:**
-   - Periodicamente, o dispositivo envia dados para o Ubidots que ele chama de **DOT**. Esses DOT inclui **valeu**, **timestamp** e **context**. Veja a figura a seguir:
-
-<picture>
-   <source media="(prefers-color-scheme: light)" srcset="https://github.com/agodoi/m04-semana06/blob/main/imgs/dc0ffa6-ubidots-data.png">
-   <img alt="Família ESP32" src="[YOUR-DEFAULT-IMAGE](https://github.com/agodoi/m04-semana06/blob/main/imgs/dc0ffa6-ubidots-data.png)">
-</picture>
-
-
-#### Valores [value]
-Um valor numérico. O Ubidots aceita número de ponto flutuante de até 16 casas decimais.
-
-{"valor" : 34.87654974}
-
-#### Carimbos de Tempo [timestamp]
-
-Um carimbo de tempo é uma maneira de rastrear o tempo como um total contínuo de segundos. Esta contagem começou no Unix Epoch em 1º de janeiro de 1970, no UTC. Portanto, o carimbo de tempo Unix é meramente o número de segundos entre uma data específica e o Unix Epoch. Por favor, tenha em mente que ao enviar dados para o Ubidots, você deve definir o carimbo de tempo em milissegundos. Além disso, se você recuperar o carimbo de tempo de um ponto, este estará em milissegundos.
-
-"carimbo de tempo" : 1537453824000
-
-O carimbo de tempo acima corresponde a quinta-feira, 20 de setembro de 2018, às 14:30:24.
-
-DICA PROFISSIONAL: Uma ferramenta útil para converter entre carimbos de tempo Unix e datas legíveis por humanos é o Epoch Converter.
-
-#### Contexto [context]
-
-Valores numéricos não são o único tipo de dado suportado. Você também pode armazenar tipos de dados de string ou char no que chamamos de contexto. O contexto é um objeto de chave-valor que permite armazenar não apenas valores numéricos, mas também valores de string. Um exemplo de uso do contexto poderia ser:
-
-"contexto" : {"status" : "ligado", "clima" : "ensolarado"}
-
-O contexto é comumente usado para armazenar as coordenadas de latitude e longitude do seu dispositivo para casos de uso de GPS/rastreamento. Todos os mapas do Ubidots usam as chaves lat e lng do contexto de um ponto para extrair as coordenadas do seu dispositivo. Dessa forma, você só precisa enviar um único ponto com os valores das coordenadas no contexto da variável para plotar um mapa, em vez de enviar separadamente tanto a latitude quanto a longitude em duas variáveis diferentes. Abaixo, você pode encontrar um contexto típico com valores de coordenadas:
-
-"contexto" : {"lat":-6.2, "lng":75.4, "clima" : "ensolarado"}
-
-Observe que você pode misturar tanto valores de string quanto numéricos no contexto. Se sua aplicação for para fins de geo-localização, certifique-se de que as coordenadas estejam definidas em graus decimais.
-
-5. **Validação do Token:**
-   - Cada solicitação de dados enviada pelo dispositivo inclui o token de acesso associado ao seu projeto Ubidots. Esse token é validado pela plataforma para garantir que a solicitação seja legítima e autorizada.
-
-6. **Armazenamento dos Dados:**
-   - Após a validação do token, os dados enviados pelo dispositivo são armazenados nos servidores do Ubidots. Eles podem ser organizados em variáveis específicas, que representam diferentes tipos de dados ou informações do dispositivo.
-
-7. **Processamento e Visualização dos Dados:**
-   - Os dados armazenados podem ser processados e visualizados por meio do painel de controle do Ubidots. Os desenvolvedores podem criar dashboards personalizados para monitorar em tempo real o desempenho de seus dispositivos IoT.
-
-8. **Configuração de Regras e Ações (Opcional):**
-   - O Ubidots oferece recursos avançados, como a configuração de regras e ações automáticas com base nos dados recebidos. Isso permite automatizar respostas a determinados eventos, como alertas ou acionamento de dispositivos.
-
-<picture>
-   <source media="(prefers-color-scheme: light)" srcset="https://github.com/agodoi/m04-semana06/blob/main/imgs/diagrama_blocos.png">
-   <img alt="Família ESP32" src="[YOUR-DEFAULT-IMAGE](https://github.com/agodoi/m04-semana06/blob/main/imgs/diagrama_blocos.png)">
-</picture>
+O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `PubSubClient` usada no cabeçalho apresentado publica em QoS 0; definir a inscrição como QoS 1 não eleva uma publicação QoS 0. Adeque a biblioteca caso o projeto exija outra garantia. A confirmação MQTT não substitui a verificação de que uma ação física foi executada.
 
 ## Parte prática
 
-Etapas:
+1. Receba em privado os dados do seu grupo e escolha um ID livre na faixa indicada na tabela da T29. Obtenha a pasta `esp32_broker-f` e o arquivo `inteli_broker.h`; não compartilhe as senhas.
+2. Instale o pacote ESP32 e `PubSubClient` na Arduino IDE. Salve o cabeçalho na pasta do sketch e não altere seu conteúdo.
+3. Monte o potenciômetro e o botão conforme o exemplo 1, respeitando o limite de 3,3 V do ESP32. Altere o ID no sketch, grave-o e acompanhe o monitor serial em 115200 baud.
+4. No notebook conectado à rede institucional, acesse o editor Node-RED da T29 correspondente ao seu grupo, pela tabela acima, e entre com o usuário e a senha recebidos em privado. Não use os dados de outra equipe.
+5. Na instância do grupo, configure `mqtt in` para o broker fornecido e tópico `inteli/iot/<ID>/telemetria`, substituindo `<ID>` pelo número do ESP32. Conecte-o a `debug` e clique em **Deploy**. Verifique a chegada dos dados.
+6. Para montar um painel, use a estrutura pré-construída do grupo ou configure nodes de dashboard. O pacote `@flowfuse/node-red-dashboard` já vem instalado nas instâncias da sala segundo o material. Converta o JSON e selecione o campo antes de alimentar um medidor ou gráfico.
+7. Para o LED, monte o circuito do exemplo 2 e grave seu sketch independente, após confirmar a configuração MQTT com o professor. Configure no Node-RED dois nodes `inject`, um enviando texto `1` e outro texto `0`, conectados a um `mqtt out` no mesmo tópico de comando do sketch. Faça **Deploy** e teste ambos. Depois, se desejar, substitua os nós `inject` por controles no dashboard.
+8. O dashboard da sala é apresentado no material como `http://<IP>:<porta>/ui`; confirme o endereço efetivo com o professor. A página do editor usa a mesma porta sem `/ui`.
 
-1) Abra sua conta particular e gratuita do [Ubidots Stem](https://ubidots.com/stem). Fique atento que o final da URL tem que ser STEM para ser uma conta de estudante;
-2) Instale a biblioteca Ubidots no Arduino IDE. Puxe os dois arquivos zip [dessa pasta](https://drive.google.com/drive/folders/10FC273CVdW05TD02czb3Ic7egROspJ67?usp=share_link) e adicione na sua IDE;
-3) Faça o [donwload](https://docs.google.com/document/d/16XECwRzPNouLuc8NXMfkkcSZ2op2C6hjdl63yghBveo/edit?usp=sharing) desse exemplo de Liga-Desliga LED e salve no seu computador;
-4) Deixe o seu ESP32 próximo do seu protoboard (ou até afixe seu ESP32 no próprio protoboard) para conectar a um LED externo;
-5) Coloque um resistor de aproximadamente 330 ohms no pino positivo do LED, e no pino negativo do LED, conecte ao GND do ESP32;
-6) Ligue o outro terminal do R no pino D2 do ESP32;
-7) Atualize esses campos do código-fonte da sua forma:
-```
-const char *UBIDOTS_TOKEN = "";  // peque o seu TOKEN da sua conta particular. Vá na sua foto do seu perfil do Ubidots, e clique em "Credenciais da API" e pegue o "Default Token" e cole aqui
-const char *WIFI_SSID = "";      // use o WiFi do seu celular nesse primeiro momento, pois o proxy local pode bloquear seu acesso
-const char *WIFI_PASS = "";      // use a senha senha do roteador do seu celular
-const char *DEVICE_LABEL = "";   // crie um nome qualquer para o seu dispositivo
-const char *VARIABLE_LABEL = ""; // crie um nome qualquer de variável que terá os dados da sua aplicação
-
-```
-8) Grave esse código no seu ESP32;
-9) Vá no seu ambiente Ubidots, e clique em **Dispositivos** e novamente, selecione a opção **Dispositivos**;
-10) Você já verá o label do device que você criou em ```const char *DEVICE_LABEL = ""```;
-11) Clique na variável ```const char *VARIABLE_LABEL = ""``` para ter acesso aos dados chegando, que nesse caso, será **0** ou **1** que indica se o LED está ligado ou desligado;
-12) Associe um widget à essa variável e controle o ligar-desligar do seu LED.
+**Rede e acesso:** o endereço da interface IoT é `192.168.10.2`; no navegador conectado à rede institucional, a T29 utiliza `10.128.0.39` e a porta do grupo. Os endereços são diferentes porque o Raspberry Pi possui duas interfaces. Se necessário, o Node-RED que roda no próprio Raspberry Pi poderá utilizar o endereço do broker configurado pelo administrador; não presuma que os IPs das duas redes sejam iguais.
 
 ## Comentário do código
 
+* `InteliBroker.begin(ID_DISPOSITIVO)` configura e inicia a conexão usando o arquivo distribuído pelo professor.
+* `InteliBroker.send("potenciometro", valor)` acrescenta um campo à próxima telemetria; não envia a mensagem imediatamente.
+* `InteliBroker.loop()` mantém a conexão e publica periodicamente conforme o intervalo da biblioteca. Deve ser chamado repetidamente no `loop()`.
+* No exemplo de comando, `mqtt.subscribe(...)` inscreve o ESP32 no tópico e `aoReceber(...)` interpreta o payload recebido. Depois de uma reconexão, é necessário refazer a inscrição.
+
+## Onde publicar as variáveis e seus valores usando MQTT?
+
+Com a biblioteca da aula, adicione um campo para cada leitura antes da próxima publicação:
+
+```cpp
+InteliBroker.send("temperatura", temperatura);
+InteliBroker.send("umidade", umidade);
+InteliBroker.loop();
 ```
-const int PUBLISH_FREQUENCY = 1000;    //essa linha é o tempo de atualização do envio do MQTT
-unsigned long timer;
-```
 
-Dentro do Void loop ()... adição do envio da variável e device para o Ubidots para facilitar a configuração da dashboard lá dentro do Ubidots
-```
-if(millis() - timer > PUBLISH_FREQUENCY){
-    
-    ubidots.add(VARIABLE_LABEL, 0);       //essa linha está associando o valor 0 na variável em questão 
-    ubidots.publish(DEVICE_LABEL);        //essa linha publica os dados no protocolo MQTT
-    timer = millis();                     //essa linha atualiza o valor de millis() que é um contato interno do ESP32
-}
-```
-
-## Onde se  publica as variáveis e seus valores usando MQTT?
-
-ubidots.add(PUBLISH_VARIABLE_LABEL, value); → manda a variável
-
-ubidots.publish(PUBLISH_DEVICE_LABEL); → manda o device
-
-Para vários sensores, como publicar? Simples, adicione um par de linhas para cada sensor:
-
-ubidots.add(PUBLISH_VARIABLE_LABEL1, value1);
-
-ubidots.publish(PUBLISH_DEVICE_LABEL1);
-
-ubidots.add(PUBLISH_VARIABLE_LABEL2, value2);
-
-ubidots.publish(PUBLISH_DEVICE_LABEL2);
-
-… e assim quantos sensores existirem no seu projeto
-
-
+Os campos são agrupados no JSON publicado em `inteli/iot/<ID>/telemetria`; o broker distribui a mensagem aos assinantes. No Node-RED, use `mqtt in`, converta o JSON para objeto e selecione cada propriedade. O MQTT não cria variáveis, dashboards ou histórico automaticamente.
 
 ## Ponderada da Semana
 
@@ -502,11 +369,8 @@ Observações importantes:
 
 ## Referência da Prática
 
-[Referência](https://help.ubidots.com/en/articles/748067-connect-an-esp32-devkitc-to-ubidots-over-mqtt?_gl=1*1weeu9s*_ga*NTM1ODIzMjQzLjE2NzMyNjQ2NjY.*_ga_VEME7QQ5EZ*MTY4NDc2MzgxOC40OC4xLjE2ODQ3NjYwMTQuNTMuMC4w)
+[Infraestrutura IoT do Inteli — Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html), material de André Godoi e Vinicius Hiroshi, outubro de 2026.
 
 ## Conclusões sobre o MQTT
 
-Cada grupo deve descrecer sobre o que aprendeu ou entendeu nessa prática.
-
-[Clique aqui](https://jamboard.google.com/d/1DeO6qMXhEGPfSgDyyLa0RFzKe3BcfY5c9m2odPYT3j4/edit?usp=sharing) e deixe sua conclusão em 1 ou 2 post-it no Jamboard, que ele será lido hoje.
-
+Cada grupo deve descrever o que aprendeu sobre publicação, assinatura, tópicos e o papel do broker local, incluindo como o Node-RED participa da comunicação. Registre a conclusão no espaço indicado pelo professor.
