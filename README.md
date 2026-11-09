@@ -12,7 +12,7 @@
 
 O Raspberry Pi 5 da sala executa o **Mosquitto**, broker MQTT responsável por encaminhar mensagens, e o **Node-RED**, ferramenta para processamento e visualização dos dados. O ESP32 conecta-se ao Wi-Fi isolado de IoT; o notebook acessa o Node-RED pela rede institucional. As duas interfaces de rede do Raspberry Pi atendem a esses ambientes.
 
-<img src="https://github.com/agodoi/m04-semana05/blob/main/imgs/arquitetura.png" width="300">
+<img src="https://github.com/agodoi/m04-semana05/blob/main/imgs/arquitetura.png" width="700">
 
 ```mermaid
 flowchart LR
