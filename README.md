@@ -57,7 +57,15 @@ O professor enviará no canal privado de cada grupo os dados da sua instância, 
 4. Utilize a pasta **`esp32_broker-f`** da T29, disponível nos [arquivos das turmas](https://drive.google.com/drive/folders/1yMFV9cq6ox71upvA42jXMI8lO3n-V_IV?usp=sharing), e siga a orientação do professor. Altere o ID passado a `InteliBroker.begin()` e não modifique `inteli_broker.h`. O cabeçalho contém a configuração da sala e deve ser tratado como arquivo sensível; não o publique no GitHub se contiver credenciais.
 5. No Node-RED, configure o recebimento para o tópico do seu ESP32, por exemplo, `inteli/iot/222/telemetria` para o ID 222. Use a conexão MQTT já configurada na instância ou siga as informações fornecidas pelo professor. Na rede IoT, a porta MQTT é **1883**; as portas 1871 a 1875 são usadas pelo editor e dashboard, não pelo MQTT.
 
-**Redes diferentes:** o ESP32 conecta-se à rede IoT da T29, `broker-f-iot`, usando a configuração do arquivo fornecido. O notebook normalmente acessa o Node-RED pelo Wi-Fi institucional. O endereço `10.128.0.39` é o acesso pela rede institucional; o endereço da interface IoT no material é `192.168.10.2`. Confirme o acesso e qualquer configuração especial com o professor. Se o endereço institucional estiver indisponível, procure o professor para verificar a alternativa pela rede IoT; não compartilhe publicamente a senha dessa rede.
+**Qual rede cada dispositivo usa?** O notebook do aluno deve permanecer, preferencialmente, na **rede do Inteli**. O ESP32 se conecta à rede local IoT `broker-f-iot`, criada pelo roteador da sala. O Raspberry Pi está ligado às duas redes por interfaces distintas; por isso, o endereço utilizado depende de onde está o dispositivo que acessa o serviço.
+
+| Dispositivo e finalidade | Rede de conexão | Endereço utilizado |
+|---|---|---|
+| Notebook: acesso ao editor ou dashboard do grupo | Rede do Inteli, opção preferencial | `10.128.0.39` e a porta do grupo; adicione `/ui` para o dashboard. |
+| ESP32: comunicação MQTT com o broker | Rede local IoT `broker-f-iot` | `192.168.10.2`, porta MQTT `1883`; essa configuração está no arquivo da turma. |
+| Notebook: acesso diretamente pela rede IoT | Rede `broker-f-iot` da sala | `192.168.10.2` e a porta do grupo; alternativa apenas quando orientada pelo professor. |
+
+`192.168.10.2` é o endereço da interface do Raspberry Pi na rede local IoT, não o endereço da rede em si nem o endereço habitual do notebook na rede do Inteli. Caso o acesso institucional apresente problemas, avise o professor; ele avaliará a alternativa de conexão direta ao roteador local. Não compartilhe publicamente as credenciais da rede.
 
 Se o ESP32 ou o dashboard não funcionar como esperado, consulte a seção **Diagnóstico e resolução de problemas**, após a parte prática.
 
@@ -371,7 +379,7 @@ O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `P
 7. Para o LED, monte o circuito do exemplo 2 e grave seu sketch independente, após confirmar a configuração MQTT com o professor. Configure no Node-RED dois nodes `inject`, um enviando texto `1` e outro texto `0`, conectados a um `mqtt out` no mesmo tópico de comando do sketch. Faça **Deploy** e teste ambos. Depois, se desejar, substitua os nós `inject` por controles no dashboard.
 8. O dashboard da sala é apresentado no material como `http://<IP>:<porta>/ui`; confirme o endereço efetivo com o professor. A página do editor usa a mesma porta sem `/ui`.
 
-**Rede e acesso:** o endereço da interface IoT é `192.168.10.2`; no navegador conectado à rede institucional, a T29 utiliza `10.128.0.39` e a porta do grupo. Os endereços são diferentes porque o Raspberry Pi possui duas interfaces. Se necessário, o Node-RED que roda no próprio Raspberry Pi poderá utilizar o endereço do broker configurado pelo administrador; não presuma que os IPs das duas redes sejam iguais.
+**Rede e acesso:** mantenha o notebook preferencialmente na rede do Inteli e acesse `10.128.0.39` com a porta do grupo. O endereço `192.168.10.2` pertence à interface do Raspberry Pi na rede IoT, utilizada pelo ESP32 e pelo notebook somente quando estiver conectado diretamente à rede local sob orientação. Os endereços são diferentes porque o Raspberry Pi possui duas interfaces. Se necessário, o Node-RED que roda no próprio Raspberry Pi poderá utilizar o endereço do broker configurado pelo administrador; não presuma que os IPs das duas redes sejam iguais.
 
 ## Diagnóstico e resolução de problemas
 
