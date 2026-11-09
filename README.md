@@ -4,8 +4,6 @@
 
 # Semana 05 - Comunicação à distância (Semana de Ponderada)
 
-**Turma: T29**
-
 * Comunicação entre o microcontrolador e os blocos externos: Wi-Fi e protocolo MQTT no ESP32.
 * Infraestrutura local de IoT: broker Mosquitto, Raspberry Pi 5 e Node-RED.
 * Modelo TCP/IP: acesso à rede, Internet, transporte e aplicação. Envio de dados de sensores e controle de um LED pela rede local.
