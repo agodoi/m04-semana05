@@ -1,4 +1,4 @@
-# Aula invertida — Broker MQTT e Node-RED
+# Aula invertida  Broker MQTT e Node-RED
 
 ## Como vamos trabalhar
 
@@ -12,7 +12,7 @@ O material da Semana 05 ficará disponível para consulta. Primeiro, conversem e
 
 <a id="momento-1"></a>
 
-## Momento 1 — Conhecendo a arquitetura
+## Momento 1  Conhecendo a arquitetura
 
 **Quando usar:** antes da seção “Arquitetura da infraestrutura local”.
 
@@ -31,7 +31,7 @@ O material da Semana 05 ficará disponível para consulta. Primeiro, conversem e
 
 <a id="momento-2"></a>
 
-## Momento 2 — Quem publica e quem recebe?
+## Momento 2  Quem publica e quem recebe?
 
 **Quando usar:** antes da seção “Funcionamento da comunicação MQTT”.
 
@@ -48,7 +48,7 @@ O material da Semana 05 ficará disponível para consulta. Primeiro, conversem e
 
 <a id="momento-3"></a>
 
-## Momento 3 — Dentro do Mosquitto
+## Momento 3  Dentro do Mosquitto
 
 **Quando usar:** antes da seção “O que acontece dentro do broker Mosquitto?”.
 
@@ -74,7 +74,7 @@ Considerem que o ESP32 publica no tópico `inteli/iot/222/telemetria`:
 
 <a id="momento-4"></a>
 
-## Momento 4 — Tópicos, filtros e QoS
+## Momento 4  Tópicos, filtros e QoS
 
 **Quando usar:** durante o fluxo do Mosquitto, antes da etapa 8, sobre inscrições e tópicos.
 
@@ -101,7 +101,7 @@ Agora respondam:
 
 <a id="momento-5"></a>
 
-## Momento 5 — O que acontece com os dados?
+## Momento 5  O que acontece com os dados?
 
 **Quando usar:** antes da seção “O broker armazena as mensagens?”.
 
@@ -119,7 +119,7 @@ Agora respondam:
 
 <a id="momento-6"></a>
 
-## Momento 6 — Preparando a T29
+## Momento 6  Preparando a T29
 
 **Quando usar:** antes de “Acesso à infraestrutura da T29”; ao retomar, avance até “Entendendo o arquivo `inteli_broker.h`”.
 
@@ -138,7 +138,7 @@ Agora respondam:
 
 <a id="momento-7"></a>
 
-## Momento 7 — Diagnóstico em equipe
+## Momento 7  Diagnóstico em equipe
 
 **Quando usar:** depois da montagem e dos primeiros testes, antes da seção “Diagnóstico e resolução de problemas”.
 
@@ -159,7 +159,7 @@ Escolham hipóteses para cada situação. Expliquem qual verificação o grupo f
 
 <a id="fechamento"></a>
 
-## Fechamento — Expliquem com suas palavras
+## Fechamento  Expliquem com suas palavras
 
 **Quando usar:** ao final da aula, antes da seção “Conclusões sobre o MQTT”.
 
