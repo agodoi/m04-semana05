@@ -1,4 +1,4 @@
-# Aula invertida: Broker MQTT e Node-RED
+# Aula invertida — Broker MQTT e Node-RED
 
 ## Como vamos trabalhar
 
@@ -12,7 +12,7 @@ O material da Semana 05 ficará disponível para consulta. Primeiro, conversem e
 
 <a id="momento-1"></a>
 
-## Momento 1: Conhecendo a arquitetura
+## Momento 1 — Conhecendo a arquitetura
 
 **Quando usar:** antes da seção “Arquitetura da infraestrutura local”.
 
@@ -31,15 +31,15 @@ O material da Semana 05 ficará disponível para consulta. Primeiro, conversem e
 
 <a id="momento-2"></a>
 
-## Momento 2: Quem publica e quem recebe?
+## Momento 2 — Quem publica e quem recebe?
 
 **Quando usar:** antes da seção “Funcionamento da comunicação MQTT”.
 
 1. O que são **publisher**, **subscriber** e **broker**? Qual deles recebe a publicação e a encaminha aos interessados?
 2. O ESP32 precisa conhecer o endereço do Node-RED para enviar uma leitura? Expliquem o caminho da mensagem.
-3. Quando o Node-RED envia um comando para acender um LED no ESP32, qual é o papel de cada um: publicador ou assinante? Um mesmo dispositivo pode assumir os dois papéis?
+3. Na prática de hoje, qual dispositivo publica as leituras e qual componente está inscrito para recebê-las?
 
-**Retomada pelo professor:** funcionamento da comunicação MQTT e caminho inverso de comando.
+**Retomada pelo professor:** funcionamento da comunicação MQTT e percurso da telemetria.
 
 
 [← Voltar para a explicação na aula](readme.md#publicacao)
@@ -48,14 +48,14 @@ O material da Semana 05 ficará disponível para consulta. Primeiro, conversem e
 
 <a id="momento-3"></a>
 
-## Momento 3: Dentro do Mosquitto
+## Momento 3 — Dentro do Mosquitto
 
 **Quando usar:** antes da seção “O que acontece dentro do broker Mosquitto?”.
 
 Considerem que o ESP32 publica no tópico `inteli/iot/222/telemetria`:
 
 ```json
-{"device":222,"potenciometro":2048,"botao":0}
+{"device":222,"botao":0}
 ```
 
 1. Antes de publicar, que conexões e identificações precisam ocorrer? O que acontece quando o Node-RED se inscreve em um tópico?
@@ -74,7 +74,7 @@ Considerem que o ESP32 publica no tópico `inteli/iot/222/telemetria`:
 
 <a id="momento-4"></a>
 
-## Momento 4: Tópicos, filtros e QoS
+## Momento 4 — Tópicos, filtros e QoS
 
 **Quando usar:** durante o fluxo do Mosquitto, antes da etapa 8, sobre inscrições e tópicos.
 
@@ -90,7 +90,7 @@ Agora respondam:
 1. O que os curingas `+` e `#` representam? Onde eles são usados?
 2. Que diferenças existem entre QoS 0, QoS 1 e QoS 2? Qual deles admite que uma mensagem chegue mais de uma vez?
 3. Se o ESP32 publicar com QoS 0 e o Node-RED solicitar QoS 1, qual é o limite da entrega? Justifiquem.
-4. Uma confirmação MQTT, quando aplicável, comprova que o LED acendeu fisicamente? Que evidência ajudaria a verificar isso?
+4. Uma confirmação MQTT, quando aplicável, comprova que o valor já apareceu corretamente no dashboard? Que verificação adicional ajudaria a confirmar isso?
 
 **Retomada pelo professor:** comparação de tópicos, curingas e níveis de QoS.
 
@@ -101,7 +101,7 @@ Agora respondam:
 
 <a id="momento-5"></a>
 
-## Momento 5: O que acontece com os dados?
+## Momento 5 — O que acontece com os dados?
 
 **Quando usar:** antes da seção “O broker armazena as mensagens?”.
 
@@ -119,7 +119,7 @@ Agora respondam:
 
 <a id="momento-6"></a>
 
-## Momento 6: Preparando a T29
+## Momento 6 — Preparando a T29
 
 **Quando usar:** antes de “Acesso à infraestrutura da T29”; ao retomar, avance até “Entendendo o arquivo `inteli_broker.h`”.
 
@@ -127,7 +127,7 @@ Agora respondam:
 2. Qual é a diferença entre o endereço do **editor Node-RED**, o endereço do **dashboard** e o endereço MQTT usado pelo ESP32?
 3. Que informações o professor enviará no canal privado do grupo? Como elas serão usadas sem expor credenciais para outras equipes?
 4. Qual é a função do arquivo `inteli_broker.h`? O que o grupo deve alterar no `.ino` para identificar sua placa?
-5. O que fazem `InteliBroker.begin()`, `InteliBroker.send()` e `InteliBroker.loop()`? Chamá-los significa que o LED já está preparado para receber comandos?
+5. O que fazem `InteliBroker.begin()`, `InteliBroker.send()` e `InteliBroker.loop()`? Qual é a diferença entre adicionar um dado à próxima mensagem e publicá-lo?
 
 **Retomada pelo professor:** acesso por grupo, faixas de IDs, cuidado com credenciais e relação entre os arquivos `.ino` e `.h`.
 
@@ -138,7 +138,7 @@ Agora respondam:
 
 <a id="momento-7"></a>
 
-## Momento 7: Diagnóstico em equipe
+## Momento 7 — Diagnóstico em equipe
 
 **Quando usar:** depois da montagem e dos primeiros testes, antes da seção “Diagnóstico e resolução de problemas”.
 
@@ -147,7 +147,7 @@ Escolham hipóteses para cada situação. Expliquem qual verificação o grupo f
 1. **O ESP32 reinicia repetidamente.** Quais causas podem estar relacionadas à alimentação, à conexão, ao arquivo da turma ou ao ID? O que o Monitor Serial pode ajudar a observar?
 2. **O ESP32 conecta ao Wi-Fi, mas não ao MQTT.** Por que uma conexão Wi-Fi funcionando não garante uma conexão ao broker?
 3. **O ESP32 parece publicar, mas o dashboard está vazio.** Como verificar o tópico e usar o node `debug` para descobrir em que etapa os dados deixaram de aparecer?
-4. **O LED não responde.** Que verificações devem ser feitas no circuito, no tópico de comando, no payload e no fluxo do Node-RED?
+4. **O estado do botão não aparece no dashboard.** Como verificar a montagem, o payload, o node `debug` e o campo selecionado no fluxo?
 5. **O editor do grupo não abre.** Que rede, endereço e porta devem ser conferidos no notebook? Que informações podem ser encaminhadas ao professor sem revelar senhas?
 
 **Retomada pelo professor:** diagnóstico na ordem ESP32 → rede → broker → Node-RED → dashboard e responsabilidades de alunos e equipe técnica.
@@ -159,7 +159,7 @@ Escolham hipóteses para cada situação. Expliquem qual verificação o grupo f
 
 <a id="fechamento"></a>
 
-## Fechamento: Expliquem com suas palavras
+## Fechamento — Expliquem com suas palavras
 
 **Quando usar:** ao final da aula, antes da seção “Conclusões sobre o MQTT”.
 
