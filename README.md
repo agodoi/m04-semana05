@@ -8,7 +8,7 @@
 * Infraestrutura local de IoT: broker Mosquitto, Raspberry Pi 5 e Node-RED.
 * Modelo TCP/IP: acesso à rede, Internet, transporte e aplicação. Envio de dados de sensores e controle de um LED pela rede local.
 
-> **Perguntas aos grupos Momento 1:** [Abrir as perguntas](perguntas.md#momento-1). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos — Momento 1:** [Abrir as perguntas](perguntas.md#momento-1). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="arquitetura"></a>
 
@@ -31,7 +31,7 @@ flowchart LR
 
 O acesso ao dashboard pela rede institucional depende da configuração da sala; isso não significa que o broker esteja disponível pela Internet.
 
-> **Perguntas aos grupos  Momento 2:** [Abrir as perguntas](perguntas.md#momento-2). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos — Momento 2:** [Abrir as perguntas](perguntas.md#momento-2). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="publicacao"></a>
 
@@ -39,7 +39,7 @@ O acesso ao dashboard pela rede institucional depende da configuração da sala;
 
 O ESP32 publica uma mensagem em um **tópico**. O broker a encaminha para clientes inscritos nesse tópico, como o Node-RED. Para enviar um comando ao ESP32, o fluxo é inverso: o Node-RED publica em um tópico de comando e o ESP32, inscrito nele, recebe a mensagem.
 
-> **Perguntas aos grupos Momento 3:** [Abrir as perguntas](perguntas.md#momento-3). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos — Momento 3:** [Abrir as perguntas](perguntas.md#momento-3). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="mosquitto"></a>
 
@@ -81,7 +81,7 @@ O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em c
 
 7. **O broker trata o payload como dados da aplicação.** Na operação MQTT comum, o Mosquitto **não precisa interpretar o JSON** para encaminhar a mensagem: ele trabalha com o tópico e os metadados MQTT e transporta o conteúdo como uma sequência de bytes. Assim, ele não calcula a média do potenciômetro, não cria automaticamente variáveis e não verifica se `botao` é `0` ou `1`. Um JSON inválido pode ser encaminhado e só causar erro quando uma aplicação tentar interpretá-lo. Configurações, extensões ou aplicações específicas podem adicionar tratamento próprio.
 
-> **Perguntas aos grupos Momento 4:** [Abrir as perguntas](perguntas.md#momento-4). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos — Momento 4:** [Abrir as perguntas](perguntas.md#momento-4). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="topicos"></a>
 
@@ -102,7 +102,7 @@ O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em c
 
 12. **O caminho inverso também é possível.** Para acionar um LED, o Node-RED pode publicar `1` ou `0` em um tópico de comando, como `inteli/t29/grupo3/comando`. O Mosquitto verifica as inscrições compatíveis e encaminha o comando; o ESP32 inscrito interpreta o payload e altera o estado do GPIO. Receber uma confirmação MQTT não prova que o LED acendeu: essa verificação exige retorno de estado ou observação do circuito.
 
-> **Perguntas aos grupos Momento 5:** [Abrir as perguntas](perguntas.md#momento-5). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos — Momento 5:** [Abrir as perguntas](perguntas.md#momento-5). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="armazenamento"></a>
 
@@ -120,9 +120,9 @@ O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em c
 * **Node-RED:** interpreta o conteúdo, processa os campos e apresenta os resultados.
 * **Dashboard:** mostra a informação ao grupo pelo navegador conectado à rede do Inteli.
 
-Referências técnicas: [Conceitos MQTT Eclipse Mosquitto](https://mosquitto.org/man/mqtt-7.html) e [Especificação MQTT 3.1.1 - OASIS](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html).
+Referências técnicas: [Conceitos MQTT — Eclipse Mosquitto](https://mosquitto.org/man/mqtt-7.html) e [Especificação MQTT 3.1.1 — OASIS](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html).
 
-> **Perguntas aos grupos Momento 6:** [Abrir as perguntas](perguntas.md#momento-6). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos — Momento 6:** [Abrir as perguntas](perguntas.md#momento-6). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="acesso"></a>
 
@@ -149,7 +149,7 @@ O professor enviará no canal privado de cada grupo os dados da sua instância, 
 1. No notebook conectado à rede institucional, abra o **editor** do seu grupo e informe o usuário e a senha recebidos em privado. Use essa instância para editar seus fluxos e publicar as alterações com **Deploy**.
 2. Abra o endereço de **dashboard** do mesmo grupo no navegador para acompanhar a interface. O endereço termina em `/ui` e não é o endereço MQTT que deve ser usado no código.
 3. Escolha um ID da faixa do seu grupo para cada ESP32. Cada placa ligada ao mesmo tempo deve ter um ID diferente. Informe esse ID no sketch da turma; ele identifica o dispositivo e compõe seu tópico de telemetria.
-4. Utilize a pasta **`esp32_broker-f`** da T29, disponível nos [arquivos das turmas](https://drive.google.com/drive/folders/1yMFV9cq6ox71upvA42jXMI8lO3n-V_IV?usp=sharing), e siga a orientação do professor. Altere o ID passado a `InteliBroker.begin()` e não modifique `inteli_broker.h`. O cabeçalho contém a configuração da sala e deve ser tratado como arquivo sensível; não o publique no GitHub se contiver credenciais.
+4. Utilize a pasta **`esp32_broker-f`** da T29, disponível nos [arquivos das turmas](https://drive.google.com/drive/folders/1yMFV9cq6ox71upvA42jXMI8lO3n-V_IV?usp=sharing), e siga a orientação do professor. Altere o ID passado a `InteliBroker.begin()` e não modifique `inteli_broker.h`. O cabeçalho contém a configuração da rede IoT da sala; as senhas individuais do editor Node-RED não fazem parte dele.
 5. No Node-RED, configure o recebimento para o tópico do seu ESP32, por exemplo, `inteli/iot/222/telemetria` para o ID 222. Use a conexão MQTT já configurada na instância ou siga as informações fornecidas pelo professor. Na rede IoT, a porta MQTT é **1883**; as portas 1871 a 1875 são usadas pelo editor e dashboard, não pelo MQTT.
 
 **Qual rede cada dispositivo usa?** O notebook do aluno deve permanecer, preferencialmente, na **rede do Inteli**. O ESP32 se conecta à rede local IoT `broker-f-iot`, criada pelo roteador da sala. O Raspberry Pi está ligado às duas redes por interfaces distintas; por isso, o endereço utilizado depende de onde está o dispositivo que acessa o serviço.
@@ -160,68 +160,160 @@ O professor enviará no canal privado de cada grupo os dados da sua instância, 
 | ESP32: comunicação MQTT com o broker | Rede local IoT `broker-f-iot` | `192.168.10.2`, porta MQTT `1883`; essa configuração está no arquivo da turma. |
 | Notebook: acesso diretamente pela rede IoT | Rede `broker-f-iot` da sala | `192.168.10.2` e a porta do grupo; alternativa apenas quando orientada pelo professor. |
 
-`192.168.10.2` é o endereço da interface do Raspberry Pi na rede local IoT, não o endereço da rede em si nem o endereço habitual do notebook na rede do Inteli. Caso o acesso institucional apresente problemas, avise o professor; ele avaliará a alternativa de conexão direta ao roteador local. Não compartilhe publicamente as credenciais da rede.
+`192.168.10.2` é o endereço da interface do Raspberry Pi na rede local IoT, não o endereço da rede em si nem o endereço habitual do notebook na rede do Inteli. Caso o acesso institucional apresente problemas, avise o professor; ele avaliará a alternativa de conexão direta ao roteador local. As credenciais do editor Node-RED permanecem restritas a cada grupo.
 
 Se o ESP32 ou o dashboard não funcionar como esperado, consulte a seção **Diagnóstico e resolução de problemas**, após a parte prática.
 
 ## Exemplos
 
-**Antes de começar:** obtenha com o professor o arquivo `inteli_broker.h`, o identificador único do ESP32, as informações da rede IoT, os endereços e a porta da instância Node-RED do grupo. Instale o suporte ao ESP32 e a biblioteca **PubSubClient** na Arduino IDE. A biblioteca `WiFi.h` faz parte do pacote da placa ESP32. Não publique credenciais em repositórios públicos.
+**Antes de começar:** obtenha com o professor o arquivo `inteli_broker.h`, o identificador único do ESP32, as informações da rede IoT, os endereços e a porta da instância Node-RED do grupo. Instale o suporte ao ESP32 e a biblioteca **PubSubClient**, do desenvolvedor **Nick O’Leary (knolleary)**, na Arduino IDE: abra **Ferramentas → Gerenciar Bibliotecas**, pesquise `PubSubClient`, confira o autor e selecione **Instalar**. Consulte a [documentação oficial da PubSubClient](https://pubsubclient.knolleary.net/). A biblioteca `WiFi.h` faz parte do pacote da placa ESP32. Não publique as senhas individuais de acesso ao editor Node-RED.
 
-### Entendendo o arquivo `inteli_broker.h`
+### Arquivo `inteli_broker.h` — configuração da T29
 
-O arquivo `.h` é um **cabeçalho** incluído no programa do ESP32. Nesta aula, ele reúne as configurações de rede e a implementação da biblioteca `InteliBroker`: conexão Wi-Fi, comunicação MQTT, tentativas de reconexão e publicação da telemetria. O arquivo que será usado de fato é o da pasta **`esp32_broker-f`**, disponibilizado para a T29 pelo professor.
+O cabeçalho a seguir contém a implementação informada pelo professor. Ele configura a conexão Wi-Fi e MQTT, publica a telemetria e tenta restabelecer a comunicação quando há falhas. O arquivo utilizado em sala é o da pasta `esp32_broker-f` e **não deve ser alterado pelos alunos**.
 
-A configuração do arquivo real é preparada pelo professor. **O grupo não deve editar esse `.h`**: no arquivo `.ino`, cada ESP32 recebe apenas um ID livre da faixa do grupo. O trecho abaixo é uma representação didática comentada das configurações descritas no material da infraestrutura. Ele não contém a implementação completa da biblioteca e **não funciona como substituto do arquivo fornecido**.
+> **Atenção:** a senha da rede IoT consta no código da aula. As senhas individuais de acesso ao editor Node-RED continuam exclusivas de cada grupo e serão enviadas no canal privado.
 
 ```cpp
-// EXEMPLO DIDÁTICO: este trecho não é o arquivo completo da aula.
+// ╔════════════════════════════════════════════╗
+// ║  NÃO ALTERAR — configurado pelo professor  ║
+// ╚════════════════════════════════════════════╝
+
 #ifndef INTELI_BROKER_H
 #define INTELI_BROKER_H
-// As duas linhas acima ajudam a evitar inclusão repetida do cabeçalho.
 
-#include <WiFi.h>          // Conexão do ESP32 à rede Wi-Fi.
-#include <PubSubClient.h>  // Comunicação MQTT com o broker.
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-// Identificação da rede IoT da T29.
-#define IB_WIFI_SSID "broker-f-iot"
-
-// Senha omitida neste material. O cabeçalho fornecido pelo professor
-// já contém a configuração necessária; não publique credenciais.
-#define IB_WIFI_PASS "SENHA_CONFIGURADA_PELO_PROFESSOR"
-
-// Endereço do Raspberry Pi na rede IoT e porta do serviço MQTT.
-#define IB_BROKER_IP "192.168.10.2"
+#define IB_WIFI_SSID   "broker-f-iot"
+#define IB_WIFI_PASS   "tau2EAhwPsh2wJsGzpYU"
+#define IB_BROKER_IP   "192.168.10.2"
 #define IB_BROKER_PORT 1883
-
-// Prefixo do tópico MQTT usado para os dispositivos da turma.
-#define IB_TOPIC "inteli/iot"
-
-// Intervalo de publicação em milissegundos: 5000 ms = 5 s.
+#define IB_TOPIC       "inteli/iot"
 #define IB_INTERVAL_MS 5000
 
-// No arquivo real, também há uma classe que implementa:
-// - begin(ID): prepara a conexão e identifica o ESP32;
-// - send(chave, valor): acrescenta dados à próxima mensagem;
-// - loop(): mantém a comunicação e publica periodicamente.
-// Essa implementação foi omitida aqui para destacar as configurações.
+class _InteliBroker {
+public:
+    void begin(int deviceId) {
+        _id  = deviceId;
+        _seq = 0;
+        _rc  = 0;
+        snprintf(_topic, sizeof(_topic), "%s/%d/telemetria", IB_TOPIC, _id);
+        _mqtt.setServer(IB_BROKER_IP, IB_BROKER_PORT);
+        _mqtt.setKeepAlive(60);
+        _mqtt.setSocketTimeout(10);
+        _connectWifi();
+        _connectMqtt();
+    }
 
-#endif // INTELI_BROKER_H
+    void loop() {
+        unsigned long now = millis();
+
+        if (WiFi.status() != WL_CONNECTED) {
+            if (!_wifiConnecting) {
+                WiFi.disconnect(true);
+                WiFi.mode(WIFI_STA);
+                WiFi.begin(IB_WIFI_SSID, IB_WIFI_PASS);
+                _wifiConnecting = true;
+                _wifiStartMs    = now;
+            }
+            if (now - _wifiStartMs > 20000) ESP.restart();
+            return;
+        }
+        if (_wifiConnecting) { _wifiConnecting = false; _rc++; }
+
+        if (!_mqtt.connected()) {
+            if (now - _mqttRetryMs >= 2000) {
+                _mqttRetryMs = now;
+                char cid[24];
+                snprintf(cid, sizeof(cid), "esp-%d", _id);
+                _mqtt.connect(cid);
+            }
+            return;
+        }
+
+        _mqtt.loop();
+        if (now - _lastPub >= IB_INTERVAL_MS) _publish();
+    }
+
+    void send(String key, float value) {
+        _extra += ",\"" + key + "\":" + String(value, 2);
+    }
+    void send(String key, int value) {
+        _extra += ",\"" + key + "\":" + String(value);
+    }
+    void send(String key, String value) {
+        _extra += ",\"" + key + "\":\"" + value + "\"";
+    }
+
+private:
+    WiFiClient    _wifiClient;
+    PubSubClient  _mqtt{_wifiClient};
+    int           _id = 0;
+    unsigned long _seq = 0, _rc = 0, _lastPub = 0;
+    unsigned long _wifiStartMs = 0, _mqttRetryMs = 0;
+    bool          _wifiConnecting = false;
+    char          _topic[64];
+    String        _extra = "";
+
+    void _publish() {
+        _lastPub = millis();
+        if (!_mqtt.connected()) return;
+        _seq++;
+        char buf[256];
+        snprintf(buf, sizeof(buf),
+            "{\"device\":%d,\"seq\":%lu,\"rssi\":%ld,\"uptime_ms\":%lu,\"reconnects\":%lu%s}",
+            _id, _seq, (long)WiFi.RSSI(), millis(), _rc, _extra.c_str());
+        _mqtt.publish(_topic, buf);
+        _extra = "";
+    }
+
+    void _connectWifi() {
+        WiFi.disconnect(true);
+        WiFi.mode(WIFI_STA);
+        WiFi.begin(IB_WIFI_SSID, IB_WIFI_PASS);
+        unsigned long t = millis();
+        while (WiFi.status() != WL_CONNECTED) {
+            if (millis() - t > 30000) ESP.restart();
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+        }
+        _rc++;
+    }
+
+    void _connectMqtt() {
+        char cid[24];
+        snprintf(cid, sizeof(cid), "esp-%d", _id);
+        unsigned long t = millis(), lastTry = 0;
+        while (!_mqtt.connected()) {
+            if (millis() - t > 10000) ESP.restart();
+            if (millis() - lastTry >= 500) {
+                lastTry = millis();
+                _mqtt.connect(cid);
+            }
+            vTaskDelay(100 / portTICK_PERIOD_MS);
+        }
+    }
+};
+
+_InteliBroker InteliBroker;
+
+#endif
 ```
 
-**O que cada dado faz:**
+#### Como o arquivo funciona
 
-| Configuração | Utilidade na aula |
-|---|---|
-| `IB_WIFI_SSID` e `IB_WIFI_PASS` | Permitem ao ESP32 conectar-se à rede IoT da sala. A senha da rede não é a senha do editor Node-RED. |
-| `IB_BROKER_IP` | Indica ao ESP32 o endereço do Raspberry Pi **na rede IoT**. O notebook acessa o Node-RED pela rede institucional usando outro endereço, `10.128.0.39`. |
-| `IB_BROKER_PORT` | Indica a porta do serviço MQTT: `1883`. As portas `1871` a `1875` são usadas pelas instâncias Node-RED dos grupos. |
-| `IB_TOPIC` | É o prefixo do tópico de telemetria. O arquivo real acrescenta o ID e `/telemetria`; por exemplo, para o ID `222`, resulta em `inteli/iot/222/telemetria`. |
-| `IB_INTERVAL_MS` | Define no arquivo real o intervalo entre publicações periódicas. O valor apresentado no material da infraestrutura é de cinco segundos. |
+* As diretivas `#ifndef`, `#define` e `#endif` evitam inclusões repetidas do cabeçalho.
+* `IB_WIFI_SSID` e `IB_WIFI_PASS` identificam a rede local IoT; o endereço `192.168.10.2` é usado pelo ESP32 nessa rede. O notebook usa preferencialmente a rede do Inteli para acessar o Node-RED.
+* `begin(deviceId)` registra o ID, monta o tópico `inteli/iot/<ID>/telemetria` e inicia as conexões. Para o ID 222, o tópico é `inteli/iot/222/telemetria`.
+* `loop()` acompanha o Wi-Fi e o MQTT, tenta reconectar quando necessário e chama a publicação a cada `5000` ms enquanto a comunicação estiver disponível.
+* `send(chave, valor)` acrescenta um campo para a próxima publicação; ele não publica imediatamente. O cabeçalho também informa `device`, `seq`, `rssi`, `uptime_ms` e `reconnects`.
+* O código apresentado implementa publicação; ele não oferece um método público de assinatura de tópicos para receber comandos.
 
-#### Relação entre o `.ino` e o `.h`
+#### Código principal `.ino`
 
-O sketch `.ino` e o cabeçalho fornecido devem estar na mesma pasta do projeto. O `.ino` inclui o `.h`, informa um ID e usa os métodos da biblioteca. Exemplo para o **Grupo 3**, com ID `222` disponível:
+Mantenha o arquivo `.ino` e o `inteli_broker.h` fornecido pelo professor na mesma pasta do projeto. No exemplo, o ID `222` é da faixa do Grupo 3. Cada aluno deve usar um ID livre da faixa do seu próprio grupo.
 
 ```cpp
 #include "inteli_broker.h"  // Usa o arquivo completo fornecido para a T29.
@@ -236,9 +328,7 @@ void loop() {
 }
 ```
 
-Esse exemplo mínimo publica a telemetria padrão da biblioteca, sem adicionar leitura de sensor. Para incluir valores próprios, consulte o exemplo 1, que usa `InteliBroker.send(...)`. A senha e o usuário recebidos em privado para o **editor Node-RED** são informados no navegador; eles não devem ser inseridos em `InteliBroker.begin()` nem confundidos com a configuração da rede Wi-Fi.
-
-> **Atenção:** se o `.h` distribuído contiver senha de Wi-Fi ou outros dados reservados, não o publique em repositório público, prints ou vídeos. Mantenha o arquivo local e consulte o professor sobre como compartilhar o projeto sem credenciais.
+Esse exemplo mínimo publica a telemetria padrão do cabeçalho e **não faz leitura de sensor por si só**. Para adicionar um potenciômetro e um botão, consulte o exemplo complementar a seguir.
 
 ### (1) Código para enviar dados ao broker local
 
@@ -282,7 +372,7 @@ Com a configuração descrita no material, a publicação ocorre a cada 5 segund
 
 O arquivo `inteli_broker.h` apresentado no material automatiza a publicação, mas **não oferece um método de inscrição em tópicos**. Por isso, este exemplo independente usa `WiFi.h` e `PubSubClient` diretamente; não inclua `inteli_broker.h` no mesmo sketch. Solicite ao professor os dados da rede IoT e a configuração de autenticação do broker. Este exemplo usa a configuração direta somente com autorização do professor; a senha do editor Node-RED não deve ser colocada no código do ESP32. O exemplo abaixo pressupõe que o broker aceite conexão sem usuário e senha; se exigir autenticação MQTT, ajuste a conexão conforme as instruções do professor.
 
-Monte um LED externo: GPIO 2 → resistor de 330 Ω → ânodo do LED; cátodo → GND. Confira a pinagem da placa. No Node-RED, publique texto `1` ou `0` no tópico de comando do grupo. Ajuste o nome do tópico e `CLIENTE_ID` ao seu grupo e dispositivo. Preencha a senha de Wi-Fi apenas localmente quando autorizada e não publique o arquivo com a senha.
+Monte um LED externo: GPIO 2 → resistor de 330 Ω → ânodo do LED; cátodo → GND. Confira a pinagem da placa. No Node-RED, publique texto `1` ou `0` no tópico de comando do grupo. Ajuste o nome do tópico e `CLIENTE_ID` ao seu grupo e dispositivo. Para testar, preencha a senha da rede IoT indicada no cabeçalho; ela é diferente da senha particular do editor Node-RED.
 
 ```cpp
 #include <WiFi.h>
@@ -428,7 +518,7 @@ A porta 1883 não garante criptografia. Autenticação, permissões e eventual T
 
 ## Documentação da infraestrutura
 
-[Infraestrutura IoT do Inteli Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html)
+[Infraestrutura IoT do Inteli — Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html)
 
 Consulte o material do Inteli para obter detalhes de Node-RED, QoS, configuração do ambiente e biblioteca distribuída pelo professor.
 
@@ -466,7 +556,7 @@ O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `P
 ## Parte prática
 
 1. Receba em privado os dados do seu grupo e escolha um ID livre na faixa indicada na tabela da T29. Obtenha a pasta `esp32_broker-f` e o arquivo `inteli_broker.h`; não compartilhe as senhas.
-2. Instale o pacote ESP32 e `PubSubClient` na Arduino IDE. Salve o cabeçalho na pasta do sketch e não altere seu conteúdo.
+2. Instale o pacote ESP32 e `PubSubClient`, de Nick O’Leary, pelo Gerenciador de Bibliotecas da Arduino IDE. Salve o cabeçalho na pasta do sketch e não altere seu conteúdo.
 3. Monte o potenciômetro e o botão conforme o exemplo 1, respeitando o limite de 3,3 V do ESP32. Altere o ID no sketch, grave-o e acompanhe o monitor serial em 115200 baud.
 4. No notebook conectado à rede institucional, acesse o editor Node-RED da T29 correspondente ao seu grupo, pela tabela acima, e entre com o usuário e a senha recebidos em privado. Não use os dados de outra equipe.
 5. Na instância do grupo, configure `mqtt in` para o broker fornecido e tópico `inteli/iot/<ID>/telemetria`, substituindo `<ID>` pelo número do ESP32. Conecte-o a `debug` e clique em **Deploy**. Verifique a chegada dos dados.
@@ -476,7 +566,7 @@ O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `P
 
 **Rede e acesso:** mantenha o notebook preferencialmente na rede do Inteli e acesse `10.128.0.39` com a porta do grupo. O endereço `192.168.10.2` pertence à interface do Raspberry Pi na rede IoT, utilizada pelo ESP32 e pelo notebook somente quando estiver conectado diretamente à rede local sob orientação. Os endereços são diferentes porque o Raspberry Pi possui duas interfaces. Se necessário, o Node-RED que roda no próprio Raspberry Pi poderá utilizar o endereço do broker configurado pelo administrador; não presuma que os IPs das duas redes sejam iguais.
 
-> **Perguntas aos grupos Momento 7:** [Abrir as perguntas](perguntas.md#momento-7). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos — Momento 7:** [Abrir as perguntas](perguntas.md#momento-7). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="diagnostico"></a>
 
@@ -494,7 +584,7 @@ Comece pelas verificações que o grupo pode fazer no seu próprio ESP32 e na su
 2. Confirme que você usou a pasta **`esp32_broker-f`**, destinada à T29, e o `inteli_broker.h` fornecido para essa turma. Não modifique o cabeçalho para tentar corrigir a rede; consulte o professor caso suspeite de erro no arquivo.
 3. Verifique se o ID informado em `InteliBroker.begin()` pertence à faixa do seu grupo e é diferente do ID usado por qualquer outra placa ligada. IDs MQTT duplicados podem provocar desconexões alternadas. Se usar os exemplos com `PubSubClient` diretamente, confira também se cada `CLIENTE_ID` é único.
 4. Abra **Ferramentas → Monitor Serial** na Arduino IDE e selecione **115200 baud**. Observe mensagens de conexão ou reinicializações. O texto exibido depende do sketch e da versão da biblioteca: uma saída sem mensagens não confirma, por si só, uma falha de Wi-Fi. O código `b4` ou reinicializações repetidas podem indicar falha de conexão; confira o contexto exibido.
-5. Verifique se a rede **`broker-f-iot`** está visível. Se não estiver, ou se o problema persistir, informe o professor. Nos exemplos que usam a conexão diretamente, confirme com o professor os dados da rede e do broker; não divulgue senhas.
+5. Verifique se a rede **`broker-f-iot`** está visível. Se não estiver, ou se o problema persistir, informe o professor. Nos exemplos que usam a conexão diretamente, confirme com o professor os dados da rede e do broker; não divulgue as senhas particulares dos grupos.
 
 ### 2. O ESP32 conecta ao Wi-Fi, mas não ao MQTT
 
@@ -554,7 +644,7 @@ journalctl -u nodered-grupo3 -n 30 --no-pager
 
 O grupo 3 e a porta 1873 são exemplos; substitua pelo grupo e porta correspondentes. O acesso aos logs pode depender das permissões da conta. Se as mensagens chegam ao Mosquitto, mas não ao dashboard, verifique o fluxo e o serviço da instância. Antes de reiniciar serviços, restaurar backups, instalar pacotes ou alterar rede e autenticação, avalie o impacto nos grupos e siga os procedimentos administrativos da instituição.
 
-Para aprofundar o diagnóstico, consulte o **Troubleshooting: Brokers IoT Inteli**, de André Godoi e Vinicius Hiroshi, fornecido como material de apoio. O guia inclui testes MQTT, roteador, conectividade SSH, recuperação de fluxos, recursos do Raspberry Pi e verificação de serviços após reinicialização.
+Para aprofundar o diagnóstico, consulte o **Troubleshooting — Brokers IoT Inteli**, de André Godoi e Vinicius Hiroshi, fornecido como material de apoio. O guia inclui testes MQTT, roteador, conectividade SSH, recuperação de fluxos, recursos do Raspberry Pi e verificação de serviços após reinicialização.
 
 ## Comentário do código
 
@@ -577,9 +667,9 @@ Os campos são agrupados no JSON publicado em `inteli/iot/<ID>/telemetria`; o br
 
 ## Referência da Prática
 
-[Infraestrutura IoT do Inteli Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html), material de André Godoi e Vinicius Hiroshi, outubro de 2026.
+[Infraestrutura IoT do Inteli — Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html), material de André Godoi e Vinicius Hiroshi, outubro de 2026.
 
-> **Perguntas aos grupos Fechamento:** [Abrir as perguntas](perguntas.md#fechamento). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos — Fechamento:** [Abrir as perguntas](perguntas.md#fechamento). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="conclusoes"></a>
 
