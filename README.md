@@ -8,7 +8,7 @@
 * Infraestrutura local de IoT: broker Mosquitto, Raspberry Pi 5 e Node-RED.
 * Modelo TCP/IP: acesso à rede, Internet, transporte e aplicação. Envio de dados de sensores e controle de um LED pela rede local.
 
-> **Perguntas aos grupos — Momento 1:** [Abrir as perguntas](perguntas.md#momento-1). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos Momento 1:** [Abrir as perguntas](perguntas.md#momento-1). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="arquitetura"></a>
 
@@ -31,7 +31,7 @@ flowchart LR
 
 O acesso ao dashboard pela rede institucional depende da configuração da sala; isso não significa que o broker esteja disponível pela Internet.
 
-> **Perguntas aos grupos — Momento 2:** [Abrir as perguntas](perguntas.md#momento-2). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos  Momento 2:** [Abrir as perguntas](perguntas.md#momento-2). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="publicacao"></a>
 
@@ -39,7 +39,7 @@ O acesso ao dashboard pela rede institucional depende da configuração da sala;
 
 O ESP32 publica uma mensagem em um **tópico**. O broker a encaminha para clientes inscritos nesse tópico, como o Node-RED. Para enviar um comando ao ESP32, o fluxo é inverso: o Node-RED publica em um tópico de comando e o ESP32, inscrito nele, recebe a mensagem.
 
-> **Perguntas aos grupos — Momento 3:** [Abrir as perguntas](perguntas.md#momento-3). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos Momento 3:** [Abrir as perguntas](perguntas.md#momento-3). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="mosquitto"></a>
 
@@ -81,7 +81,7 @@ O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em c
 
 7. **O broker trata o payload como dados da aplicação.** Na operação MQTT comum, o Mosquitto **não precisa interpretar o JSON** para encaminhar a mensagem: ele trabalha com o tópico e os metadados MQTT e transporta o conteúdo como uma sequência de bytes. Assim, ele não calcula a média do potenciômetro, não cria automaticamente variáveis e não verifica se `botao` é `0` ou `1`. Um JSON inválido pode ser encaminhado e só causar erro quando uma aplicação tentar interpretá-lo. Configurações, extensões ou aplicações específicas podem adicionar tratamento próprio.
 
-> **Perguntas aos grupos — Momento 4:** [Abrir as perguntas](perguntas.md#momento-4). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos Momento 4:** [Abrir as perguntas](perguntas.md#momento-4). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="topicos"></a>
 
@@ -102,7 +102,7 @@ O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em c
 
 12. **O caminho inverso também é possível.** Para acionar um LED, o Node-RED pode publicar `1` ou `0` em um tópico de comando, como `inteli/t29/grupo3/comando`. O Mosquitto verifica as inscrições compatíveis e encaminha o comando; o ESP32 inscrito interpreta o payload e altera o estado do GPIO. Receber uma confirmação MQTT não prova que o LED acendeu: essa verificação exige retorno de estado ou observação do circuito.
 
-> **Perguntas aos grupos — Momento 5:** [Abrir as perguntas](perguntas.md#momento-5). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos Momento 5:** [Abrir as perguntas](perguntas.md#momento-5). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="armazenamento"></a>
 
@@ -120,9 +120,9 @@ O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em c
 * **Node-RED:** interpreta o conteúdo, processa os campos e apresenta os resultados.
 * **Dashboard:** mostra a informação ao grupo pelo navegador conectado à rede do Inteli.
 
-Referências técnicas: [Conceitos MQTT — Eclipse Mosquitto](https://mosquitto.org/man/mqtt-7.html) e [Especificação MQTT 3.1.1 — OASIS](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html).
+Referências técnicas: [Conceitos MQTT Eclipse Mosquitto](https://mosquitto.org/man/mqtt-7.html) e [Especificação MQTT 3.1.1 - OASIS](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html).
 
-> **Perguntas aos grupos — Momento 6:** [Abrir as perguntas](perguntas.md#momento-6). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos Momento 6:** [Abrir as perguntas](perguntas.md#momento-6). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="acesso"></a>
 
@@ -428,7 +428,7 @@ A porta 1883 não garante criptografia. Autenticação, permissões e eventual T
 
 ## Documentação da infraestrutura
 
-[Infraestrutura IoT do Inteli — Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html)
+[Infraestrutura IoT do Inteli Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html)
 
 Consulte o material do Inteli para obter detalhes de Node-RED, QoS, configuração do ambiente e biblioteca distribuída pelo professor.
 
@@ -476,7 +476,7 @@ O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `P
 
 **Rede e acesso:** mantenha o notebook preferencialmente na rede do Inteli e acesse `10.128.0.39` com a porta do grupo. O endereço `192.168.10.2` pertence à interface do Raspberry Pi na rede IoT, utilizada pelo ESP32 e pelo notebook somente quando estiver conectado diretamente à rede local sob orientação. Os endereços são diferentes porque o Raspberry Pi possui duas interfaces. Se necessário, o Node-RED que roda no próprio Raspberry Pi poderá utilizar o endereço do broker configurado pelo administrador; não presuma que os IPs das duas redes sejam iguais.
 
-> **Perguntas aos grupos — Momento 7:** [Abrir as perguntas](perguntas.md#momento-7). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos Momento 7:** [Abrir as perguntas](perguntas.md#momento-7). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="diagnostico"></a>
 
@@ -554,7 +554,7 @@ journalctl -u nodered-grupo3 -n 30 --no-pager
 
 O grupo 3 e a porta 1873 são exemplos; substitua pelo grupo e porta correspondentes. O acesso aos logs pode depender das permissões da conta. Se as mensagens chegam ao Mosquitto, mas não ao dashboard, verifique o fluxo e o serviço da instância. Antes de reiniciar serviços, restaurar backups, instalar pacotes ou alterar rede e autenticação, avalie o impacto nos grupos e siga os procedimentos administrativos da instituição.
 
-Para aprofundar o diagnóstico, consulte o **Troubleshooting — Brokers IoT Inteli**, de André Godoi e Vinicius Hiroshi, fornecido como material de apoio. O guia inclui testes MQTT, roteador, conectividade SSH, recuperação de fluxos, recursos do Raspberry Pi e verificação de serviços após reinicialização.
+Para aprofundar o diagnóstico, consulte o **Troubleshooting: Brokers IoT Inteli**, de André Godoi e Vinicius Hiroshi, fornecido como material de apoio. O guia inclui testes MQTT, roteador, conectividade SSH, recuperação de fluxos, recursos do Raspberry Pi e verificação de serviços após reinicialização.
 
 ## Comentário do código
 
@@ -577,9 +577,9 @@ Os campos são agrupados no JSON publicado em `inteli/iot/<ID>/telemetria`; o br
 
 ## Referência da Prática
 
-[Infraestrutura IoT do Inteli — Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html), material de André Godoi e Vinicius Hiroshi, outubro de 2026.
+[Infraestrutura IoT do Inteli Broker MQTT e Node-RED](https://templates.pages.git.inteli.edu.br/primeiro-ano/in04/infraestrutura-iot-inteli/Infraestrutura_IoT.html), material de André Godoi e Vinicius Hiroshi, outubro de 2026.
 
-> **Perguntas aos grupos — Fechamento:** [Abrir as perguntas](perguntas.md#fechamento). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
+> **Perguntas aos grupos Fechamento:** [Abrir as perguntas](perguntas.md#fechamento). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
 <a id="conclusoes"></a>
 
