@@ -57,7 +57,7 @@ inteli/iot/222/telemetria
 O conteúdo da mensagem, chamado **payload**, pode ser um texto em formato JSON, por exemplo:
 
 ```json
-{"device":222,"potenciometro":2048,"botao":0}
+{"device":222,"botao":0}
 ```
 
 O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em condições normais, o ESP32 chega ao Mosquitto pela rede IoT da sala, e o notebook acessa o editor e o dashboard do Node-RED pela rede do Inteli.
@@ -70,13 +70,13 @@ O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em c
 
 3. **O Node-RED também se conecta e informa seu interesse.** Um node `mqtt in` funciona como cliente MQTT: depois de se conectar ao broker, envia um `SUBSCRIBE` com um filtro de tópico, por exemplo `inteli/iot/222/telemetria`, e o QoS máximo desejado. O Mosquitto registra a inscrição se ela for autorizada e responde com `SUBACK`, informando o resultado. Essa etapa pode ter ocorrido antes da publicação do ESP32.
 
-4. **O ESP32 prepara os dados.** O sketch coleta as leituras e monta o payload. No exemplo, ele representa `device`, `potenciometro` e `botao` como texto JSON. A biblioteca acrescenta ao pacote MQTT o nome do tópico, o QoS de publicação e outras informações aplicáveis, como a indicação de mensagem retida. O payload não precisa ser JSON: MQTT pode transportar outros tipos de conteúdo em bytes.
+4. **O ESP32 prepara os dados.** O sketch coleta as leituras e monta o payload. No exemplo, ele representa `device` e `botao` como texto JSON. A biblioteca acrescenta ao pacote MQTT o nome do tópico, o QoS de publicação e outras informações aplicáveis, como a indicação de mensagem retida. O payload não precisa ser JSON: MQTT pode transportar outros tipos de conteúdo em bytes.
 
 5. **O Mosquitto recebe o pacote `PUBLISH`.** A partir do fluxo de dados recebido pela conexão TCP, o broker identifica o pacote MQTT e examina suas informações de protocolo, incluindo tópico, QoS, indicador de retenção e tamanho. O payload é a parte que contém os dados da aplicação. Os campos apresentados em um pacote dependem da versão do protocolo e do QoS utilizado.
 
 6. **O broker verifica se a publicação é permitida.** O Mosquitto aplica a configuração disponível, como permissões de publicação no tópico, limites de tamanho e regras de autenticação ou autorização. Se uma verificação falhar, o tratamento depende da configuração e da versão do MQTT. Na arquitetura da aula, o fato de cada grupo ter uma instância de Node-RED própria não comprova, por si só, que há bloqueio entre tópicos no broker; isso depende das permissões configuradas nele.
 
-7. **O broker trata o payload como dados da aplicação.** Na operação MQTT comum, o Mosquitto **não precisa interpretar o JSON** para encaminhar a mensagem: ele trabalha com o tópico e os metadados MQTT e transporta o conteúdo como uma sequência de bytes. Assim, ele não calcula a média do potenciômetro, não cria automaticamente variáveis e não verifica se `botao` é `0` ou `1`. Um JSON inválido pode ser encaminhado e só causar erro quando uma aplicação tentar interpretá-lo. Configurações, extensões ou aplicações específicas podem adicionar tratamento próprio.
+7. **O broker trata o payload como dados da aplicação.** Na operação MQTT comum, o Mosquitto **não precisa interpretar o JSON** para encaminhar a mensagem: ele trabalha com o tópico e os metadados MQTT e transporta o conteúdo como uma sequência de bytes. Assim, ele não cria automaticamente variáveis e não verifica se `botao` é `0` ou `1`. Um JSON inválido pode ser encaminhado e só causar erro quando uma aplicação tentar interpretá-lo. Configurações, extensões ou aplicações específicas podem adicionar tratamento próprio.
 
 > **Perguntas aos grupos — Momento 4:** [Abrir as perguntas](perguntas.md#momento-4). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
@@ -95,7 +95,7 @@ O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em c
 
 10. **O QoS controla as confirmações.** Em QoS 0, não há confirmação MQTT de entrega; em QoS 1, o receptor confirma com `PUBACK`, e a mensagem pode ser entregue mais de uma vez; em QoS 2, há uma troca adicional de pacotes para garantir a entrega exatamente uma vez no âmbito do protocolo. O trecho ESP32 → broker e o trecho broker → Node-RED têm confirmações próprias. Na entrega a um assinante, o QoS não supera o QoS da publicação nem o máximo concedido à inscrição. Assim, uma publicação com QoS 0 permanece QoS 0 mesmo que o Node-RED peça QoS 1. A biblioteca `PubSubClient` dos exemplos publica em QoS 0.
 
-11. **O Node-RED interpreta e usa os dados.** Após o recebimento, o node `mqtt in` disponibiliza o tópico em `msg.topic` e o payload em `msg.payload`. Conforme a configuração, o payload pode chegar como texto ou buffer. Um node `json` pode convertê-lo em objeto; depois, outro node acessa `msg.payload.potenciometro`, por exemplo. O fluxo pode exibir o valor em um medidor, alimentar um gráfico, executar uma regra ou enviar dados a um banco configurado separadamente.
+11. **O Node-RED interpreta e usa os dados.** Após o recebimento, o node `mqtt in` disponibiliza o tópico em `msg.topic` e o payload em `msg.payload`. Conforme a configuração, o payload pode chegar como texto ou buffer. Um node `json` pode convertê-lo em objeto; depois, outro node acessa `msg.payload.botao`, por exemplo. O fluxo pode exibir o valor em um medidor, alimentar um gráfico, executar uma regra ou enviar dados a um banco configurado separadamente.
 
 12. **O dashboard apresenta o resultado.** O Node-RED usa o dado recebido para atualizar a interface do grupo. Nesta aula, o arquivo `inteli_broker.h` é usado para enviar telemetria do ESP32; ele não implementa a recepção de comandos.
 
@@ -325,24 +325,22 @@ void loop() {
 }
 ```
 
-Esse exemplo mínimo publica a telemetria padrão do cabeçalho e **não faz leitura de sensor por si só**. Para adicionar um potenciômetro e um botão, consulte o exemplo complementar a seguir.
+Esse exemplo mínimo publica a telemetria padrão do cabeçalho e **não faz leitura de sensor por si só**. Para adicionar a leitura de um botão, consulte o exemplo complementar a seguir.
 
 ### (1) Código para enviar dados ao broker local
 
-Salve `inteli_broker.h` fornecido pelo professor na mesma pasta do sketch. Não altere esse arquivo. O exemplo usa o ID `222`, pertencente ao Grupo 3 da T29. Substitua-o por um ID disponível da faixa do seu grupo; não repita um ID que outra placa já esteja usando. O exemplo lê um potenciômetro no GPIO 34 e um botão no GPIO 33, configurado com resistor interno de pull-up. Ligue o botão entre GPIO 33 e GND; no exemplo, pressionado equivale a 1.
+Salve `inteli_broker.h` fornecido pelo professor na mesma pasta do sketch. Não altere esse arquivo. O exemplo usa o ID `222`, pertencente ao Grupo 3 da T29. Substitua-o por um ID disponível da faixa do seu grupo; não repita um ID que outra placa já esteja usando. O exemplo lê um botão no GPIO 33, configurado com resistor interno de pull-up. Ligue o botão entre GPIO 33 e GND; no exemplo, pressionado equivale a 1.
 
 ```cpp
 #include "inteli_broker.h"
 
 const int ID_DISPOSITIVO = 222; // ID único informado pelo professor
-const int PINO_POTENCIOMETRO = 34;
 const int PINO_BOTAO = 33;
 unsigned long ultimaLeitura = 0;
 const unsigned long INTERVALO_LEITURA = 5000;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(PINO_POTENCIOMETRO, INPUT);
   pinMode(PINO_BOTAO, INPUT_PULLUP);
   InteliBroker.begin(ID_DISPOSITIVO);
 }
@@ -351,19 +349,17 @@ void loop() {
   // Adiciona uma leitura antes de o serviço publicar a mensagem.
   if (millis() - ultimaLeitura >= INTERVALO_LEITURA) {
     ultimaLeitura = millis();
-    int potenciometro = analogRead(PINO_POTENCIOMETRO);
     int botao = digitalRead(PINO_BOTAO) == LOW ? 1 : 0;
-    InteliBroker.send("potenciometro", potenciometro);
     InteliBroker.send("botao", botao);
-    Serial.printf("Potenciometro: %d | Botao: %d\n", potenciometro, botao);
+    Serial.printf("Botao: %d\n", botao);
   }
   InteliBroker.loop();
 }
 ```
 
-Com a configuração descrita no material, a publicação ocorre a cada 5 segundos no tópico `inteli/iot/222/telemetria`, quando o ID é 222. O JSON inclui os campos de telemetria da biblioteca e os valores adicionados com `send()`. Os campos extras são esvaziados após cada publicação; evite acrescentar repetidamente o mesmo campo entre duas publicações. Para testar, inscreva um node **mqtt in** nesse tópico e conecte-o a um **debug**.
+Com a configuração descrita no material, a publicação ocorre a cada 5 segundos no tópico `inteli/iot/222/telemetria`, quando o ID é 222. O JSON inclui os campos de telemetria da biblioteca e os valores adicionados com `send()`. Os campos extras são esvaziados após cada tentativa de publicação. Em uma desconexão, chamadas repetidas a `send()` podem acumular campos com o mesmo nome; após restabelecer a conexão, confira o JSON no debug. O cabeçalho atual não expõe a confirmação de publicação ao sketch. Para testar, inscreva um node **mqtt in** nesse tópico e conecte-o a um **debug**.
 
-> Use alimentação e tensão compatíveis com o ESP32: a entrada analógica não deve receber tensão acima de 3,3 V. Confira a pinagem da sua placa.
+> Confira a pinagem da sua placa. Com `INPUT_PULLUP`, ligue o botão entre o GPIO 33 e o GND, sem aplicar tensão externa à entrada.
 
 # Teoria Completa
 
@@ -413,7 +409,7 @@ Consulte o material do Inteli para obter detalhes de Node-RED, QoS, configuraç�
 O MQTT transporta um **payload**, cujo formato é definido pela aplicação. Na biblioteca da aula, a telemetria é enviada em JSON. Exemplo ilustrativo:
 
 ```json
-{"device":222,"seq":42,"rssi":-55,"uptime_ms":210000,"reconnects":1,"potenciometro":2048,"botao":0}
+{"device":222,"seq":42,"rssi":-55,"uptime_ms":210000,"reconnects":1,"botao":0}
 ```
 
 `device` identifica o ESP32; `seq` é a sequência; `rssi` representa a intensidade do sinal Wi-Fi; `uptime_ms` é o tempo desde a inicialização, em milissegundos; e `reconnects` registra conexões na implementação fornecida. Os demais campos são adicionados pelo projeto. `uptime_ms` não é data e hora: se precisar de carimbo de tempo real, implemente a obtenção de horário e defina seu formato e unidade. Outros dados, como texto ou coordenadas, podem ser incluídos no JSON quando previstos pela aplicação.
@@ -432,7 +428,7 @@ O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `P
 
 1. Receba em privado os dados do seu grupo e escolha um ID livre na faixa indicada na tabela da T29. Obtenha a pasta `esp32_broker-f` e o arquivo `inteli_broker.h`; não compartilhe as senhas.
 2. Instale o pacote ESP32 e `PubSubClient`, de Nick O’Leary, pelo Gerenciador de Bibliotecas da Arduino IDE. Salve o cabeçalho na pasta do sketch e não altere seu conteúdo.
-3. Monte o potenciômetro e o botão conforme o exemplo 1, respeitando o limite de 3,3 V do ESP32. Altere o ID no sketch, grave-o e acompanhe o monitor serial em 115200 baud.
+3. Monte o botão entre o GPIO 33 e o GND conforme o exemplo 1. Altere o ID no sketch, grave-o e acompanhe o monitor serial em 115200 baud.
 4. No notebook conectado à rede institucional, acesse o editor Node-RED da T29 correspondente ao seu grupo, pela tabela acima, e entre com o usuário e a senha recebidos em privado. Não use os dados de outra equipe.
 5. Na instância do grupo, configure `mqtt in` para o broker fornecido e tópico `inteli/iot/<ID>/telemetria`, substituindo `<ID>` pelo número do ESP32. Conecte-o a `debug` e clique em **Deploy**. Verifique a chegada dos dados.
 6. Para montar um painel, use a estrutura pré-construída do grupo ou configure nodes de dashboard. O pacote `@flowfuse/node-red-dashboard` já vem instalado nas instâncias da sala segundo o material. Converta o JSON e selecione o campo antes de alimentar um medidor ou gráfico.
@@ -516,7 +512,7 @@ Para aprofundar o diagnóstico, consulte o **Troubleshooting — Brokers IoT Int
 ## Comentário do código
 
 * `InteliBroker.begin(ID_DISPOSITIVO)` configura e inicia a conexão usando o arquivo distribuído pelo professor.
-* `InteliBroker.send("potenciometro", valor)` acrescenta um campo à próxima telemetria; não envia a mensagem imediatamente.
+* `InteliBroker.send("botao", valor)` acrescenta um campo à próxima telemetria; não envia a mensagem imediatamente.
 * `InteliBroker.loop()` mantém a conexão e publica periodicamente conforme o intervalo da biblioteca. Deve ser chamado repetidamente no `loop()`.
 
 ## Onde publicar as variáveis e seus valores usando MQTT?
