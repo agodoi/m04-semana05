@@ -6,7 +6,7 @@
 
 * Comunicação entre o microcontrolador e os blocos externos: Wi-Fi e protocolo MQTT no ESP32.
 * Infraestrutura local de IoT: broker Mosquitto, Raspberry Pi 5 e Node-RED.
-* Modelo TCP/IP: acesso à rede, Internet, transporte e aplicação. Envio de dados de sensores e controle de um LED pela rede local.
+* Modelo TCP/IP: acesso à rede, Internet, transporte e aplicação. Envio de dados de sensores para visualização no Node-RED pela rede local.
 
 > **Perguntas aos grupos — Momento 1:** [Abrir as perguntas](perguntas.md#momento-1). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
@@ -24,9 +24,6 @@ flowchart LR
     E -- MQTT pela rede IoT --> B["Raspberry Pi: Mosquitto"]
     B --> N[Node-RED]
     N --> D["Dashboard no navegador"]
-    N -- Comando MQTT --> B
-    B --> E
-    E --> L[LED]
 ```
 
 O acesso ao dashboard pela rede institucional depende da configuração da sala; isso não significa que o broker esteja disponível pela Internet.
@@ -37,7 +34,7 @@ O acesso ao dashboard pela rede institucional depende da configuração da sala;
 
 ## Funcionamento da comunicação MQTT
 
-O ESP32 publica uma mensagem em um **tópico**. O broker a encaminha para clientes inscritos nesse tópico, como o Node-RED. Para enviar um comando ao ESP32, o fluxo é inverso: o Node-RED publica em um tópico de comando e o ESP32, inscrito nele, recebe a mensagem.
+O ESP32 publica uma mensagem em um **tópico**. O broker a encaminha para clientes inscritos nesse tópico, como o Node-RED. Nesta aula, o ESP32 publica telemetria e o Node-RED a recebe como assinante.
 
 > **Perguntas aos grupos — Momento 3:** [Abrir as perguntas](perguntas.md#momento-3). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
@@ -100,7 +97,7 @@ O Node-RED do grupo está inscrito nesse tópico para receber a telemetria. Em c
 
 11. **O Node-RED interpreta e usa os dados.** Após o recebimento, o node `mqtt in` disponibiliza o tópico em `msg.topic` e o payload em `msg.payload`. Conforme a configuração, o payload pode chegar como texto ou buffer. Um node `json` pode convertê-lo em objeto; depois, outro node acessa `msg.payload.potenciometro`, por exemplo. O fluxo pode exibir o valor em um medidor, alimentar um gráfico, executar uma regra ou enviar dados a um banco configurado separadamente.
 
-12. **O caminho inverso também é possível.** Para acionar um LED, o Node-RED pode publicar `1` ou `0` em um tópico de comando, como `inteli/t29/grupo3/comando`. O Mosquitto verifica as inscrições compatíveis e encaminha o comando; o ESP32 inscrito interpreta o payload e altera o estado do GPIO. Receber uma confirmação MQTT não prova que o LED acendeu: essa verificação exige retorno de estado ou observação do circuito.
+12. **O dashboard apresenta o resultado.** O Node-RED usa o dado recebido para atualizar a interface do grupo. Nesta aula, o arquivo `inteli_broker.h` é usado para enviar telemetria do ESP32; ele não implementa a recepção de comandos.
 
 > **Perguntas aos grupos — Momento 5:** [Abrir as perguntas](perguntas.md#momento-5). Depois da discussão, use o link de retorno para continuar a explicação abaixo.
 
@@ -368,139 +365,18 @@ Com a configuração descrita no material, a publicação ocorre a cada 5 segund
 
 > Use alimentação e tensão compatíveis com o ESP32: a entrada analógica não deve receber tensão acima de 3,3 V. Confira a pinagem da sua placa.
 
-### (2) Código para receber comandos e acender um LED
-
-O arquivo `inteli_broker.h` apresentado no material automatiza a publicação, mas **não oferece um método de inscrição em tópicos**. Por isso, este exemplo independente usa `WiFi.h` e `PubSubClient` diretamente; não inclua `inteli_broker.h` no mesmo sketch. Solicite ao professor os dados da rede IoT e a configuração de autenticação do broker. Este exemplo usa a configuração direta somente com autorização do professor; a senha do editor Node-RED não deve ser colocada no código do ESP32. O exemplo abaixo pressupõe que o broker aceite conexão sem usuário e senha; se exigir autenticação MQTT, ajuste a conexão conforme as instruções do professor.
-
-Monte um LED externo: GPIO 2 → resistor de 330 Ω → ânodo do LED; cátodo → GND. Confira a pinagem da placa. No Node-RED, publique texto `1` ou `0` no tópico de comando do grupo. Ajuste o nome do tópico e `CLIENTE_ID` ao seu grupo e dispositivo. Para testar, preencha a senha da rede IoT indicada no cabeçalho; ela é diferente da senha particular do editor Node-RED.
-
-```cpp
-#include <WiFi.h>
-#include <PubSubClient.h>
-
-const char* WIFI_SSID = "broker-f-iot";
-const char* WIFI_SENHA = "SENHA_REDE_IOT";
-const char* BROKER_IP = "192.168.10.2"; // confirme o endereço com o professor
-const int BROKER_PORTA = 1883;
-const char* CLIENTE_ID = "esp32-grupo3-comando"; // único no broker
-const char* TOPICO_COMANDO = "inteli/t29/grupo3/comando";
-const int PINO_LED = 2;
-
-WiFiClient rede;
-PubSubClient mqtt(rede);
-unsigned long ultimaTentativa = 0;
-
-void aoReceber(char* topico, byte* payload, unsigned int tamanho) {
-  String mensagem;
-  for (unsigned int i = 0; i < tamanho; i++) mensagem += (char)payload[i];
-  mensagem.trim();
-  if (mensagem == "1") digitalWrite(PINO_LED, HIGH);
-  else if (mensagem == "0") digitalWrite(PINO_LED, LOW);
-  else { Serial.println("Comando invalido: use 0 ou 1"); return; }
-  Serial.printf("Topico: %s | Comando: %s\n", topico, mensagem.c_str());
-}
-
-void setup() {
-  Serial.begin(115200);
-  pinMode(PINO_LED, OUTPUT);
-  digitalWrite(PINO_LED, LOW);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_SENHA);
-  mqtt.setServer(BROKER_IP, BROKER_PORTA);
-  mqtt.setCallback(aoReceber);
-}
-
-void loop() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  if (!mqtt.connected() && millis() - ultimaTentativa >= 2000) {
-    ultimaTentativa = millis();
-    if (mqtt.connect(CLIENTE_ID)) mqtt.subscribe(TOPICO_COMANDO, 1);
-  }
-  mqtt.loop();
-}
-```
-
-Após reconectar ao broker, o sketch refaz a inscrição. A primeira tentativa de conexão MQTT ocorre até dois segundos após iniciar. O ESP32 e o broker precisam estar alcançáveis pela rede IoT. As credenciais de acesso ao editor Node-RED não são necessariamente credenciais MQTT.
-
-### (3) Juntando envio e recebimento de dados
-
-Este sketch independente também usa `PubSubClient` diretamente, pois o cabeçalho apresentado não implementa assinatura. Ajuste rede, IP, ID e tópicos conforme a sala. Ele publica um JSON com potenciômetro e botão e recebe comandos para o LED. Não utilize este exemplo simultaneamente ao exemplo 1 no mesmo ESP32.
-
-```cpp
-#include <WiFi.h>
-#include <PubSubClient.h>
-
-const char* WIFI_SSID = "broker-f-iot";
-const char* WIFI_SENHA = "SENHA_REDE_IOT";
-const char* BROKER_IP = "192.168.10.2"; // confirme o endereço com o professor
-const int BROKER_PORTA = 1883;
-const char* CLIENTE_ID = "esp32-grupo3-completo"; // único no broker
-const char* TOPICO_DADOS = "inteli/iot/222/telemetria";
-const char* TOPICO_COMANDO = "inteli/t29/grupo3/comando";
-const int ID_DISPOSITIVO = 222;
-const int PINO_POTENCIOMETRO = 34, PINO_BOTAO = 33, PINO_LED = 2;
-const unsigned long INTERVALO = 5000;
-unsigned long ultimaPublicacao = 0, ultimaTentativa = 0;
-WiFiClient rede;
-PubSubClient mqtt(rede);
-
-void aoReceber(char* topico, byte* payload, unsigned int tamanho) {
-  String mensagem;
-  for (unsigned int i = 0; i < tamanho; i++) mensagem += (char)payload[i];
-  mensagem.trim();
-  if (mensagem == "1") digitalWrite(PINO_LED, HIGH);
-  else if (mensagem == "0") digitalWrite(PINO_LED, LOW);
-  else { Serial.println("Comando invalido"); return; }
-  Serial.printf("Topico: %s | Comando: %s\n", topico, mensagem.c_str());
-}
-
-void setup() {
-  Serial.begin(115200);
-  pinMode(PINO_POTENCIOMETRO, INPUT);
-  pinMode(PINO_BOTAO, INPUT_PULLUP);
-  pinMode(PINO_LED, OUTPUT);
-  digitalWrite(PINO_LED, LOW);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_SENHA);
-  mqtt.setServer(BROKER_IP, BROKER_PORTA);
-  mqtt.setCallback(aoReceber);
-}
-
-void loop() {
-  if (WiFi.status() != WL_CONNECTED) return;
-  if (!mqtt.connected() && millis() - ultimaTentativa >= 2000) {
-    ultimaTentativa = millis();
-    if (mqtt.connect(CLIENTE_ID)) mqtt.subscribe(TOPICO_COMANDO, 1);
-  }
-  if (!mqtt.connected()) return;
-  mqtt.loop();
-  if (millis() - ultimaPublicacao >= INTERVALO) {
-    ultimaPublicacao = millis();
-    char mensagem[128];
-    snprintf(mensagem, sizeof(mensagem),
-      "{\"device\":%d,\"potenciometro\":%d,\"botao\":%d}",
-      ID_DISPOSITIVO, analogRead(PINO_POTENCIOMETRO),
-      digitalRead(PINO_BOTAO) == LOW ? 1 : 0);
-    if (mqtt.publish(TOPICO_DADOS, mensagem)) Serial.println(mensagem);
-    else Serial.println("Falha ao publicar");
-  }
-}
-```
-
-O ID 222 e o tópico de comando são exemplos para o Grupo 3: ajuste-os à faixa e ao tópico do seu grupo, usando um `CLIENTE_ID` único por placa. O JSON deste exemplo é simplificado: ele não acrescenta automaticamente os campos `seq`, `rssi`, `uptime_ms` e `reconnects` da biblioteca do professor. Se a estrutura do grupo depender desses campos, combine a adaptação com o professor. A publicação usando `PubSubClient.publish()` ocorre em **QoS 0**; a inscrição acima solicita QoS 1, mas a entrega depende também do QoS da publicação. Para publicar em QoS 1, é necessária uma biblioteca MQTT com suporte a esse recurso ou outra implementação aprovada pelo professor.
-
 # Teoria Completa
 
 # Comunicação à Distância
 
-A comunicação ocorre quando ESP32, broker e aplicação trocam mensagens por uma rede. Nesta aula, usamos uma rede local: o ESP32 coleta dados, o Mosquitto os encaminha e o Node-RED os apresenta ou processa. O mesmo caminho permite que uma aplicação envie comandos ao microcontrolador.
+A comunicação ocorre quando ESP32, broker e aplicação trocam mensagens por uma rede. Nesta aula, usamos uma rede local: o ESP32 coleta dados, o Mosquitto os encaminha e o Node-RED os apresenta ou processa. Nesta prática, o ESP32 envia os dados e o Node-RED os recebe.
 
 ## Arquitetura do projeto com broker local
 
-* **ESP32:** conecta sensores e atuadores à rede Wi-Fi IoT e atua como cliente MQTT.
+* **ESP32:** lê os sensores e atua como cliente MQTT na rede Wi-Fi IoT.
 * **Raspberry Pi 5:** computador da sala conectado à rede IoT pela interface Ethernet nativa e à rede institucional por adaptador Ethernet USB.
 * **Mosquitto:** broker que recebe publicações e as distribui aos clientes inscritos.
-* **Node-RED:** ambiente de programação visual que recebe e processa mensagens, cria painéis e publica comandos.
+* **Node-RED:** ambiente de programação visual que recebe e processa mensagens e cria painéis.
 * **Notebook:** acessa a instância do grupo no Node-RED usando a rede institucional.
 
 A infraestrutura local permite trabalhar dentro da rede da sala, com autonomia de configuração e baixa latência. Disponibilidade, segurança e capacidade dependem da configuração e administração do ambiente. Um broker MQTT, por si só, **não é um banco de dados nem cria dashboards**: persistência, visualização e regras precisam ser implementadas nos serviços apropriados.
@@ -530,8 +406,7 @@ Consulte o material do Inteli para obter detalhes de Node-RED, QoS, configuraç�
 4. **Publicação:** a biblioteca adiciona os valores à mensagem JSON e publica no Mosquitto; por exemplo, `inteli/iot/222/telemetria`.
 5. **Distribuição:** o broker encaminha a mensagem aos clientes inscritos no tópico.
 6. **Processamento e visualização:** um fluxo Node-RED recebe, transforma e exibe os dados no debug ou dashboard.
-7. **Comando:** um fluxo Node-RED pode publicar em um tópico de comando; um ESP32 inscrito interpreta a mensagem e aciona o LED.
-8. **Armazenamento e regras:** são opcionais e precisam ser configurados em componentes próprios ou fluxos do Node-RED.
+7. **Armazenamento e regras:** são opcionais e precisam ser configurados em componentes próprios ou fluxos do Node-RED.
 
 ### Dados da mensagem
 
@@ -545,13 +420,13 @@ O MQTT transporta um **payload**, cujo formato é definido pela aplicação. Na 
 
 ### Tópicos e QoS
 
-Tópicos organizam as mensagens hierarquicamente, como `inteli/iot/222/telemetria` e `inteli/t29/grupo3/comando`. Publicador e assinante precisam usar tópicos compatíveis. Na inscrição, `+` corresponde a um nível e `#` aos níveis restantes.
+Tópicos organizam as mensagens hierarquicamente, como `inteli/iot/222/telemetria` e `inteli/iot/223/telemetria`. Publicador e assinante precisam usar tópicos compatíveis. Na inscrição, `+` corresponde a um nível e `#` aos níveis restantes.
 
 * **QoS 0:** no máximo uma entrega; mensagens podem se perder.
 * **QoS 1:** pelo menos uma entrega; podem ocorrer duplicações.
 * **QoS 2:** exatamente uma entrega no protocolo, com maior custo de comunicação.
 
-O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `PubSubClient` usada no cabeçalho apresentado publica em QoS 0; definir a inscrição como QoS 1 não eleva uma publicação QoS 0. Adeque a biblioteca caso o projeto exija outra garantia. A confirmação MQTT não substitui a verificação de que uma ação física foi executada.
+O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `PubSubClient` usada no cabeçalho apresentado publica em QoS 0; definir a inscrição como QoS 1 não eleva uma publicação QoS 0. Adeque a biblioteca caso o projeto exija outra garantia.
 
 ## Parte prática
 
@@ -561,8 +436,7 @@ O material do Inteli recomenda QoS 1 para o módulo. Entretanto, a biblioteca `P
 4. No notebook conectado à rede institucional, acesse o editor Node-RED da T29 correspondente ao seu grupo, pela tabela acima, e entre com o usuário e a senha recebidos em privado. Não use os dados de outra equipe.
 5. Na instância do grupo, configure `mqtt in` para o broker fornecido e tópico `inteli/iot/<ID>/telemetria`, substituindo `<ID>` pelo número do ESP32. Conecte-o a `debug` e clique em **Deploy**. Verifique a chegada dos dados.
 6. Para montar um painel, use a estrutura pré-construída do grupo ou configure nodes de dashboard. O pacote `@flowfuse/node-red-dashboard` já vem instalado nas instâncias da sala segundo o material. Converta o JSON e selecione o campo antes de alimentar um medidor ou gráfico.
-7. Para o LED, monte o circuito do exemplo 2 e grave seu sketch independente, após confirmar a configuração MQTT com o professor. Configure no Node-RED dois nodes `inject`, um enviando texto `1` e outro texto `0`, conectados a um `mqtt out` no mesmo tópico de comando do sketch. Faça **Deploy** e teste ambos. Depois, se desejar, substitua os nós `inject` por controles no dashboard.
-8. O dashboard da sala é apresentado no material como `http://<IP>:<porta>/ui`; confirme o endereço efetivo com o professor. A página do editor usa a mesma porta sem `/ui`.
+7. O dashboard da sala é apresentado no material como `http://<IP>:<porta>/ui`; confirme o endereço efetivo com o professor. A página do editor usa a mesma porta sem `/ui`.
 
 **Rede e acesso:** mantenha o notebook preferencialmente na rede do Inteli e acesse `10.128.0.39` com a porta do grupo. O endereço `192.168.10.2` pertence à interface do Raspberry Pi na rede IoT, utilizada pelo ESP32 e pelo notebook somente quando estiver conectado diretamente à rede local sob orientação. Os endereços são diferentes porque o Raspberry Pi possui duas interfaces. Se necessário, o Node-RED que roda no próprio Raspberry Pi poderá utilizar o endereço do broker configurado pelo administrador; não presuma que os IPs das duas redes sejam iguais.
 
@@ -610,14 +484,7 @@ A conexão Wi-Fi e a conexão ao broker são etapas diferentes. Nos exemplos que
 * **Login rejeitado:** confira o usuário e a senha recebidos em privado, respeitando maiúsculas e minúsculas, e verifique se abriu o editor do grupo correto. Não envie a senha em canal aberto. Se o problema continuar, procure o professor; a configuração de autenticação deve ser verificada pela equipe responsável.
 * **Caminho da interface:** nas instâncias da sala, o material indica `/ui`. Se o ambiente tiver configuração diferente, confirme o endereço com o professor; `/dashboard` pode ser usado em outras instalações, mas não deve ser presumido para a T29.
 
-### 5. O LED não responde ao comando
-
-1. Confira a montagem: GPIO correto, resistor em série, polaridade do LED e GND. Desligue a alimentação antes de alterar as conexões.
-2. Verifique se o ESP32 está conectado ao broker e se o tópico publicado pelo Node-RED é exatamente o mesmo ao qual o ESP32 está inscrito. Depois de editar o fluxo, clique em **Deploy**.
-3. Nos exemplos deste material, envie o texto `1` para ligar e `0` para desligar; outros valores são rejeitados. Acompanhe o Monitor Serial para identificar o comando recebido.
-4. Após uma queda de conexão, confira se o sketch refez a inscrição. Se houver dúvida, teste o fluxo usando `inject → mqtt out` e peça apoio ao professor.
-
-### 6. Informações para pedir ajuda
+### 5. Informações para pedir ajuda
 
 Informe ao professor **o grupo, o ID do ESP32, a etapa que falhou, o tópico utilizado, a mensagem de erro e o que já foi testado**. Uma captura do Monitor Serial ou do `debug` pode ajudar, desde que não mostre senhas, credenciais ou informações de outros grupos.
 
@@ -651,7 +518,6 @@ Para aprofundar o diagnóstico, consulte o **Troubleshooting — Brokers IoT Int
 * `InteliBroker.begin(ID_DISPOSITIVO)` configura e inicia a conexão usando o arquivo distribuído pelo professor.
 * `InteliBroker.send("potenciometro", valor)` acrescenta um campo à próxima telemetria; não envia a mensagem imediatamente.
 * `InteliBroker.loop()` mantém a conexão e publica periodicamente conforme o intervalo da biblioteca. Deve ser chamado repetidamente no `loop()`.
-* No exemplo de comando, `mqtt.subscribe(...)` inscreve o ESP32 no tópico e `aoReceber(...)` interpreta o payload recebido. Depois de uma reconexão, é necessário refazer a inscrição.
 
 ## Onde publicar as variáveis e seus valores usando MQTT?
 
